@@ -326,16 +326,18 @@
         .settings-grid { display: grid; gap: 10px; margin-bottom: 12px; }
         .settings-field label { display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; }
 
-        /* ===== Tooltip ===== */
-        .tip { position: relative; cursor: help; }
-        .tip::after {
-            content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 0;
-            width: max-content; max-width: 260px; background-color: var(--text-main); color: var(--bg-panel);
-            text-align: left; padding: 8px 10px; font-size: 0.7rem; border-radius: 4px;
-            opacity: 0; visibility: hidden; transition: opacity 0.15s; z-index: 100;
-            line-height: 1.5; pointer-events: none; white-space: normal; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* ===== Tooltip (Global Toast) ===== */
+        .tip { cursor: help; }
+        #global-toast {
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            background: rgba(33, 37, 41, 0.95); color: #fff;
+            padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;
+            max-width: 90vw; width: max-content; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 9999; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none; text-align: left; line-height: 1.5;
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
         }
-        .tip:hover::after { opacity: 1; visibility: visible; }
+        #global-toast.show { bottom: 24px; opacity: 1; }
 
         /* ===== Confirm Overlay ===== */
         .confirm-overlay {
@@ -380,6 +382,9 @@
     </style>
 </head>
 <body>
+
+    <!-- 全局提示框 (Tooltip Toast) -->
+    <div id="global-toast"></div>
 
     <!-- 确认弹窗 -->
     <div class="confirm-overlay" id="confirm-overlay">
@@ -1249,6 +1254,21 @@ function syncVitals() {
     DB.current_buff = DB.current_hp >= 80 ? 1.2 : 1.0;
     
     DB.current_debuffs = [];
+    
+    // 1. 数据悖论判定: 睡眠充足，但HRV极差、RHR极高 -> 系统性炎症/免疫应激
+    if (score_total >= 0.9 && hrvDiff <= -0.15 && rhrDiff <= -0.1) {
+        DB.current_debuffs.push('SYSTEMIC_INFLAMMATION');
+    } else if (score_total < 0.6) {
+        // 2. 睡眠剥夺霸权覆盖
+        DB.current_debuffs.push('SLEEP_DEPRIVATION');
+    } else {
+        // 只有未触发极度危机时，才会计算正面 Buff
+        if (hrvDiff > 0.1 && rhrDiff > 0.05 && score_total > 0.8) DB.current_debuffs.push('FLOW_STATE');
+        if (score_deep > 0.9 && score_rem > 0.9) DB.current_debuffs.push('COGNITIVE_RESERVE');
+    }
+
+    // 身心解耦的负面状态：即时在非危机状态下也可能因为结构失衡出现，但在危机下必然叠加出现
+    if (hrvDiff < -0.15 && rhrDiff < -0.1) DB.current_debuffs.push('SYMPATHETIC_OVERDRIVE');
     if (score_deep >= 0.8 && score_rem <= 0.6) DB.current_debuffs.push('BRAIN_FOG');
     if (score_rem >= 0.8 && score_deep <= 0.6) DB.current_debuffs.push('MUSCLE_FATIGUE');
 
@@ -1312,33 +1332,80 @@ function commitInline(baseAttr) {
     else if (tags.length === 4) hybridMult = 0.40;
 
     let baseXp = val * 1.0;
-    let totalMult = intensity * DB.current_buff * hybridMult;
-    let taxFlags = [];
-    if (hasTax) { totalMult *= 0.7; taxFlags.push('熵税'); }
-    if (hybridMult < 1.0) taxFlags.push(`并发折损×${hybridMult.toFixed(2)}`);
+    let baseTotalMult = intensity * DB.current_buff * hybridMult;
+    let baseTaxFlags = [];
+    if (hasTax) { baseTotalMult *= 0.7; baseTaxFlags.push('熵税'); }
+    if (hybridMult < 1.0) baseTaxFlags.push(`并发折损×${hybridMult.toFixed(2)}`);
 
-    let finalXp = baseXp * totalMult;
     let levelUpMsg = "";
+    let finalActionXpSum = 0;
     
     tags.forEach(attr => {
+        let attrMult = 1.0;
+        let attrTaxFlags = [...baseTaxFlags];
+        
+        if (DB.current_debuffs) {
+            // 霸权机制与危机处理
+            if (DB.current_debuffs.includes('SYSTEMIC_INFLAMMATION')) {
+                attrMult *= 0.7; attrTaxFlags.push('免疫应激-30%');
+                if (intensity > 1.0) { attrMult *= 0.5; attrTaxFlags.push('危机期高强严惩-50%'); }
+            } else if (DB.current_debuffs.includes('SLEEP_DEPRIVATION')) {
+                attrMult *= 0.8; attrTaxFlags.push('睡眠剥夺-20%');
+                if (intensity > 1.0) { attrMult *= 0.7; attrTaxFlags.push('剥夺期高强严惩-30%'); }
+            } else {
+                // 正面增益 (只有未被霸权覆盖时才生效)
+                if (DB.current_debuffs.includes('FLOW_STATE')) { attrMult *= 1.15; attrTaxFlags.push('心流状态+15%'); }
+                if (DB.current_debuffs.includes('COGNITIVE_RESERVE') && (attr === 'FOC' || attr === 'WIL')) { attrMult *= 1.15; attrTaxFlags.push('认知储备+15%'); }
+            }
+
+            // 行为导向机制：交感过载下的惩罚与“主动恢复奖励”
+            if (DB.current_debuffs.includes('SYMPATHETIC_OVERDRIVE') && (attr === 'STR' || attr === 'CON')) {
+                if (intensity >= 1.5) {
+                    attrMult *= 0.7; attrTaxFlags.push('过载期高强作死-30%');
+                } else if (intensity <= 0.8 && attr === 'CON') {
+                    attrMult *= 1.1; attrTaxFlags.push('主动恢复奖励+10%');
+                } else {
+                    attrMult *= 0.85; attrTaxFlags.push('交感过载-15%');
+                }
+            }
+
+            // 身心解耦判定
+            if (DB.current_debuffs.includes('BRAIN_FOG') && attr === 'FOC') {
+                if (intensity >= 1.5) {
+                    attrMult *= 0.8; attrTaxFlags.push('脑雾高强断崖惩罚-20%');
+                } else {
+                    attrMult *= 0.95; attrTaxFlags.push('脑雾轻微折损-5%');
+                }
+            }
+            if (DB.current_debuffs.includes('MUSCLE_FATIGUE') && attr === 'STR') {
+                attrMult *= 0.9; attrTaxFlags.push('肌肉疲劳-10%');
+            }
+        }
+
+        let attrFinalXp = baseXp * baseTotalMult * attrMult;
+        finalActionXpSum += attrFinalXp; // For generic display
+
         const oldLvl = calcLevelObj(DB.attributes[attr].total_xp).level;
-        DB.attributes[attr].total_xp += finalXp;
+        DB.attributes[attr].total_xp += attrFinalXp;
         
         const medThreshold = oldLvl * 1.5;
-        if (finalXp >= medThreshold) {
+        if (attrFinalXp >= medThreshold) {
             DB.attributes[attr].last_update = Math.max(DB.attributes[attr].last_update || 0, actionTime);
         } else {
-            taxFlags.push(`${attr} 未达MED(${medThreshold.toFixed(1)})`);
+            attrTaxFlags.push(`${attr} 未达MED(${medThreshold.toFixed(1)})`);
         }
         
+        // Log individual attr message
+        let attrDesc = `${val} ${baseAttr==='WIL'?'数':'min'} × ${intensity.toFixed(1)}${attrTaxFlags.length? ' ('+attrTaxFlags.join(',')+')':''}`;
+        addActionLog('COMMIT', [attr], attrFinalXp, attrDesc, actionTime);
+
         const newLvl = calcLevelObj(DB.attributes[attr].total_xp).level;
         if (newLvl > oldLvl) levelUpMsg += ` [${attr} -> LV.${newLvl}]`;
     });
 
-    const desc = `${val} ${baseAttr==='WIL'?'数':'min'} × ${intensity.toFixed(1)}${taxFlags.length? ' ('+taxFlags.join(',')+')':''}`;
-    addActionLog('COMMIT', tags, finalXp, desc, actionTime);
+    const summaryDesc = `${val} ${baseAttr==='WIL'?'数':'min'} × ${intensity.toFixed(1)}${baseTaxFlags.length? ' ('+baseTaxFlags.join(',')+')':''}`;
     
-    logOracle(`> [${tags.join('+')}] +${Math.floor(finalXp)} XP. ${desc}`);
+    logOracle(`> [${tags.join('+')}] 共 +${Math.floor(finalActionXpSum)} XP. ${summaryDesc}`);
     if (levelUpMsg) logOracle(`>>> LEVEL UP!${levelUpMsg}`, 'positive');
 
     if (chkTax) chkTax.checked = false;
@@ -1377,8 +1444,11 @@ function renderVitalsUI() {
     const statusEl = document.getElementById('ui-hp-status');
     const hpFill = document.getElementById('hp-fill');
 
-    if (DB.current_hp === 0 && DB.vitals_ema.hrv_ema === null) {
-        hpEl.innerText = '--%'; statusEl.style.display = 'none'; return;
+    const statusContainer = document.getElementById('ui-hp-status');
+    statusContainer.innerHTML = '';
+
+    if (DB.current_hp === 0 && (DB.vitals_ema.hrv_ema === null || DB.vitals_ema.hrv_ema === undefined)) {
+        hpEl.innerText = '--%'; statusContainer.style.display = 'none'; return;
     }
     hpEl.innerText = `${DB.current_hp}%`;
     if (hpFill) {
@@ -1387,22 +1457,47 @@ function renderVitalsUI() {
         hpFill.style.boxShadow = DB.current_hp < 40 ? '0 0 8px rgba(230,81,0,0.4)' : '0 0 8px rgba(0,191,165,0.4)';
     }
 
-    statusEl.style.display = 'inline-block'; statusEl.className = 'status-badge';
-    let texts = [];
-    if (DB.current_hp >= 80) texts.push('BUFF ×1.2');
-    else if (DB.current_hp < 40) texts.push('⚠ 伤病高危');
+    let badges = [];
+    if (DB.current_hp >= 80) badges.push({ text: 'BUFF ×1.2', class: 'status-buff', tip: 'HP ≥ 80: 全局经验获取提升 20%' });
+    else if (DB.current_hp < 40) badges.push({ text: '⚠ 伤病高危', class: 'status-warn', tip: 'HP < 40: 身体机能处于低谷，强烈建议休息' });
     
     if (DB.current_debuffs) {
-        if (DB.current_debuffs.includes('BRAIN_FOG')) texts.push('▼ 脑雾 (FOC-10%)');
-        if (DB.current_debuffs.includes('MUSCLE_FATIGUE')) texts.push('▼ 肌肉疲劳 (STR-10%)');
+        if (DB.current_debuffs.includes('SYSTEMIC_INFLAMMATION')) 
+            badges.push({ text: '▼ 免疫应激', class: 'status-warn', tip: '【基础经验 -30%】睡眠长却伴随生命体征崩溃，身体正处于抗炎、排毒或生病初期。所有正面状态已被强制覆盖。警告：任何高强度训练将受到毁灭性经验惩罚，建议绝对静养！' });
+        
+        if (DB.current_debuffs.includes('SLEEP_DEPRIVATION')) 
+            badges.push({ text: '▼ 睡眠剥夺', class: 'status-warn', tip: '【基础经验 -20%】睡眠时间不足4.8h，皮质醇异常升高，胰岛素敏感性下降。强制屏蔽心流与认知储备。警告：高强度行为收益断崖式下跌，立刻停止透支！' });
+
+        if (DB.current_debuffs.includes('BRAIN_FOG')) 
+            badges.push({ text: '▼ 脑雾', class: 'status-warn', tip: '【深度脑力惩罚】深睡充分但REM不足。执行机械习惯(WIL)无碍，但试图进行高强度专注(FOC)将导致效率急剧折损。' });
+        
+        if (DB.current_debuffs.includes('MUSCLE_FATIGUE')) 
+            badges.push({ text: '▼ 肌肉疲劳', class: 'status-warn', tip: '【STR -10%】REM充分但深睡不足，身体未能分泌足够的生长激素进行肌纤维修复。' });
+        
+        if (DB.current_debuffs.includes('SYMPATHETIC_OVERDRIVE')) 
+            badges.push({ text: '▼ 交感过载', class: 'status-warn', tip: '【高强惩罚 / 恢复奖励】中枢神经系统过度应激。高强度力量训练收益暴跌；但此时进行低强度的有氧散步或冥想(主动恢复)，将获得 +10% 的额外恢复奖励！' });
+        
+        if (DB.current_debuffs.includes('FLOW_STATE')) 
+            badges.push({ text: '▲ 心流状态', class: 'status-buff', tip: '【全属性 +15%】交感与副交感神经系统高度协调，心流门槛极低，神经可塑性处于绝佳状态。' });
+        
+        if (DB.current_debuffs.includes('COGNITIVE_RESERVE')) 
+            badges.push({ text: '▲ 认知储备', class: 'status-buff', tip: '【FOC/WIL +15%】深度与REM睡眠双极化充足。前额叶与海马体代谢彻底，意志力槽极深。' });
     }
     
-    if (texts.length > 0) {
-        statusEl.innerText = texts.join(' | ');
-        if (DB.current_hp >= 80 && texts.length === 1) statusEl.classList.add('status-buff');
-        else statusEl.classList.add('status-warn');
+    if (badges.length > 0) {
+        statusContainer.style.display = 'flex';
+        statusContainer.style.gap = '6px';
+        statusContainer.style.alignItems = 'center';
+        statusContainer.className = '';
+        badges.forEach(b => {
+            const span = document.createElement('span');
+            span.className = `status-badge tip ${b.class}`;
+            span.setAttribute('data-tip', b.tip);
+            span.innerText = b.text;
+            statusContainer.appendChild(span);
+        });
     } else { 
-        statusEl.style.display = 'none'; 
+        statusContainer.style.display = 'none'; 
     }
 }
 
@@ -1975,6 +2070,44 @@ function setupEventListeners() {
 }
 
 
+
+// ===== 全局 Toast Tooltip 逻辑 =====
+document.addEventListener('DOMContentLoaded', () => {
+    const toast = document.getElementById('global-toast');
+    let hideTimeout;
+
+    const showToast = (e) => {
+        const target = e.target.closest('.tip');
+        if (target) {
+            clearTimeout(hideTimeout);
+            const tipText = target.getAttribute('data-tip');
+            if (tipText) {
+                toast.innerHTML = tipText;
+                toast.classList.add('show');
+            }
+        } else {
+            toast.classList.remove('show');
+        }
+    };
+
+    document.body.addEventListener('mouseover', showToast);
+    document.body.addEventListener('touchstart', (e) => {
+        const target = e.target.closest('.tip');
+        if (target) {
+            clearTimeout(hideTimeout);
+            const tipText = target.getAttribute('data-tip');
+            if (tipText) {
+                toast.innerHTML = tipText;
+                toast.classList.add('show');
+                hideTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 4000);
+            }
+        } else {
+            toast.classList.remove('show');
+        }
+    }, { passive: true });
+});
 
 // 引擎点火
 window.onload = initEngine;
