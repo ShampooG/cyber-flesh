@@ -7,7 +7,336 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="义体计划">
     <title>PROJECT_FLESH // TERMINAL V5.3</title>
-    <style>
+    <style>        /* ===== 基础与全局 ===== */
+        :root {
+            --bg: #F0F2F5;
+            --bg-panel: #FFFFFF;
+            --text-main: #212529;
+            --text-dim: #495057;
+            --text-hint: #868E96;
+            --border: #DEE2E6;
+            --panel-border: #E9ECEF;
+            --green: #00BFA5;
+            --green-dim: rgba(0, 191, 165, 0.1);
+            --orange: #E65100;
+            --orange-dim: rgba(230, 81, 0, 0.08);
+            --cyan: #00B8D4;
+            --font-mono: 'Courier New', Courier, 'Fira Code', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            line-height: 1.5;
+            padding: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow-x: hidden;
+            font-size: 14px;
+        }
+
+        /* 基础控件 */
+        input, select, button {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 8px 12px;
+            outline: none;
+            appearance: none;
+            border-radius: 2px;
+        }
+        input[type="checkbox"] {
+            appearance: auto;
+            -webkit-appearance: auto;
+            width: 16px;
+            height: 16px;
+            padding: 0;
+            cursor: pointer;
+        }
+        input[type="date"] {
+            font-family: var(--font-mono);
+        }
+        
+        input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-dim); }
+        input::placeholder { color: var(--text-hint); }
+        
+        button {
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.15s ease;
+            letter-spacing: 0.5px;
+        }
+        
+        button:hover { background: var(--border); }
+        button:active { background: var(--text-main); color: var(--bg-panel); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        button.btn-primary { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+        button.btn-primary:hover { background: var(--green); color: white; }
+        button.btn-primary:active { background: var(--green); filter: brightness(0.9); }
+        button.btn-danger { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+        button.btn-danger:hover { background: var(--orange); color: white; }
+        .btn-danger { background-color: transparent; color: var(--orange); border: 1px solid var(--orange); }
+        .btn-danger:hover { background-color: var(--orange); color: white; }
+
+        .col-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .section {
+            padding: 24px;
+            position: relative;
+        }
+        .section + .section {
+            border-top: 1px dashed var(--panel-border);
+        }
+        .section-title {
+            color: var(--text-dim); font-size: 0.8rem; letter-spacing: 1px; font-weight: bold;
+            margin-bottom: 12px; padding-bottom: 8px; text-transform: uppercase;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .section-desc { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 16px; line-height: 1.4; border-left: 2px solid var(--border); padding-left: 10px;}
+
+        /* ===== Calibration Overlay ===== */
+        .calibration-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(248,249,250,0.95);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            display: flex; flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .calib-box { max-width: 600px; margin: 0 auto; width: 100%; border: 1px solid var(--green); background: var(--bg-panel); padding: 20px; box-shadow: 0 4px 12px rgba(0,191,165,0.15); border-radius: 4px;}
+        .calib-title { color: var(--green); font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid var(--green); padding-bottom: 10px;}
+        .calib-intro { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; }
+        .calib-group { margin-bottom: 20px; }
+        .calib-label { display: block; font-size: 0.8rem; color: var(--cyan); margin-bottom: 8px; font-weight: bold;}
+        .calib-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .calib-row input, .calib-row select { flex: 1; border-color: var(--border); }
+        .radio-group { display: flex; flex-direction: column; gap: 8px; }
+        .calib-preview { background: var(--bg); border: 1px solid var(--border); padding: 15px; margin-top: 20px; margin-bottom: 20px; text-align: center; border-radius: 4px;}
+        .calib-preview-title { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; }
+        .calib-preview-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 1.1rem; font-weight: bold; color: var(--green); }
+        
+        /* ===== L1: Vitals & Sleep ===== */
+        .section-subtitle { font-size: 0.7rem; color: var(--text-hint); font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid var(--panel-border); padding-bottom: 4px; letter-spacing: 0.5px;}
+        .sleep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .hm-field { display: flex; flex-direction: column; }
+        .hm-field label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 6px; font-weight: bold;}
+        .hm-inputs { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--bg); transition: border 0.2s;}
+        .hm-inputs:focus-within { border-color: var(--green); }
+        .hm-inputs input { border: none; background: transparent; padding: 6px 2px; text-align: center; font-family: monospace; font-size: 0.85rem; font-weight: bold; width: 100%; border-radius: 0; min-width: 0;}
+        .hm-inputs input:focus { box-shadow: none; outline: none; }
+        .hm-inputs span { color: var(--text-hint); font-size: 0.7rem; padding-right: 4px; font-weight: bold; }
+        
+        .vitals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .vitals-input { display: flex; flex-direction: column; }
+        .vitals-input label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 6px; cursor: help; font-weight: bold;}
+        .hp-display { font-size: 2.5rem; font-weight: bold; display: flex; align-items: center; gap: 15px; margin-bottom: 4px; }
+        .hp-bar-row { margin-bottom: 15px; display: flex; align-items: center; width: 100%; max-width: 300px; }
+        .status-badge { font-size: 0.85rem; padding: 2px 8px; border: 1px solid transparent; border-radius: 2px; }
+        .status-buff { color: white; background-color: var(--green); }
+        .status-warn { color: white; background-color: var(--orange); }
+
+        /* ===== L2: Attributes ===== */
+        .attr-row { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+        .attr-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .attr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;}
+        .attr-name-group { display: flex; align-items: baseline; gap: 8px; }
+        .attr-name { font-weight: bold; color: var(--green); }
+        .attr-label { font-size: 0.75rem; color: var(--text-dim); }
+        .attr-level { color: var(--green); font-weight: bold; }
+        .attr-decay { font-size: 0.75rem; color: var(--text-dim); }
+        .attr-decay.decaying { color: var(--orange); animation: blink 2s infinite; }
+        .attr-desc { font-size: 0.7rem; color: var(--text-hint); margin-bottom: 5px; }
+        .progress-bar-container { display: flex; align-items: center; gap: 12px; width: 100%; }
+        .progress-bg { flex: 1; height: 8px; background-color: var(--bg); border-radius: 4px; overflow: hidden; position: relative; max-width: 250px; border: 1px solid var(--border); }
+        .progress-fill { height: 100%; background-color: var(--green); box-shadow: 0 0 8px rgba(0,191,165,0.4); transition: width 0.3s ease; border-radius: 3px; }
+        .xp-text { font-size: 0.75rem; color: var(--text-dim); min-width: 60px; text-align: right; font-family: monospace;}
+        .xp-total { font-size: 0.65rem; color: var(--text-hint); margin-left: auto; font-family: monospace; }
+
+        /* ===== L3: I/O ===== */
+        .tag-selector { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .attr-tag {
+            padding: 6px 12px; border: 1px solid var(--border); color: var(--text-dim); background: var(--bg);
+            cursor: pointer; font-size: 0.8rem; transition: all 0.15s; border-radius: 4px;
+            user-select: none;
+        }
+        .attr-tag.active { border-color: var(--green); color: var(--green); background: var(--green-dim); font-weight: bold; box-shadow: 0 2px 4px rgba(0,191,165,0.15);}
+        .io-form { display: grid; gap: 16px; }
+        .io-row { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+        
+        .input-group { display: flex; align-items: stretch; flex: 1; min-width: 140px; }
+        .input-group input { border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; border-right: none; font-weight: bold; width: 100%; }
+        .unit-addon { display: flex; align-items: center; padding: 0 12px; background: var(--bg); border: 1px solid var(--border); border-top-right-radius: 6px; border-bottom-right-radius: 6px; color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
+        
+        #in-oracle-journal { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.85rem; color: var(--text-main); resize: vertical; line-height: 1.5; transition: border-color 0.2s; }
+        #in-oracle-journal:focus { border-color: var(--cyan); outline: none; box-shadow: 0 0 5px rgba(0,184,212,0.3); }
+
+        .inline-input-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 10px; animation: fadeInDown 0.2s ease-out forwards; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .inline-tags { margin-top: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
+        .tag-label { color: var(--text-hint); }
+        .mini-tag { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; transition: all 0.1s; }
+        .mini-tag.active { background: var(--green-dim); color: var(--green); border-color: var(--green); font-weight: bold; }
+        .inline-actions { margin-top: 10px; display: flex; gap: 8px; }
+        .inline-actions button { padding: 8px; font-size: 0.85rem; flex: 1; margin-top: 0; }
+
+        .checkbox-row { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; margin-bottom: 15px;}
+        .checkbox-label { 
+            display: flex; align-items: flex-start; gap: 8px; cursor: pointer;
+            padding: 6px 8px; border: 1px solid transparent; transition: background 0.2s;
+            color: var(--text-main); border-radius: 4px;
+        }
+        .checkbox-label:hover { background: var(--bg); }
+        .checkbox-label input[type="checkbox"] { width: auto; margin-top: 3px; flex-shrink: 0; }
+        .checkbox-text { display: flex; flex-direction: column; gap: 2px; }
+        .checkbox-title { font-weight: bold; }
+        .checkbox-desc { font-size: 0.7rem; color: var(--text-dim); font-weight: normal; }
+        .btn-toxic { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); width: 100%; padding: 12px; font-size: 0.9rem; margin-top: 10px; font-weight: bold; }
+        .btn-toxic:hover { background: var(--orange); color: white; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 109, 0, 0.3); }
+
+        
+        /* Tabs */
+        .record-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+        .record-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: var(--text-dim); font-weight: bold; font-size: 0.85rem; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .record-tab.active { color: var(--green); border-bottom-color: var(--green); }
+        .record-panel { display: none; }
+        .record-panel.active { display: block; }
+        
+        /* Plus Button */
+        .btn-add-xp { display: inline-block; margin-left: 8px; width: 18px; height: 18px; line-height: 16px; text-align: center; border-radius: 50%; background: var(--green-dim); color: var(--green); font-weight: bold; cursor: pointer; font-size: 14px; border: 1px solid var(--green); transition: all 0.2s; vertical-align: middle;}
+        .btn-add-xp:hover { background: var(--green); color: white; transform: scale(1.1); }
+        
+        /* Inline Tooltip */
+        .inline-tip-icon { cursor: pointer; display: inline-block; background: var(--border); color: var(--text-dim); width: 14px; height: 14px; line-height: 14px; text-align: center; border-radius: 50%; font-size: 10px; margin-left: 4px; }
+        .inline-tip-content { display: none; font-size: 0.7rem; color: var(--text-hint); background: var(--panel-border); padding: 8px; border-radius: 4px; margin-top: 5px; line-height: 1.4; }
+
+        /* ===== Dashboard Grid ===== */
+        .dashboard-grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: stretch; margin-bottom: 24px; }
+        .col-left { display: flex; flex-direction: column; gap: 24px; }
+        .col-right { display: flex; flex-direction: column; gap: 24px; }
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+        /* ===== Monthly Calendar ===== */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; }
+        .calendar-nav-btn { cursor: pointer; background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 4px; padding: 2px 8px; font-size: 0.7rem; }
+        .calendar-nav-btn:hover { color: var(--text-main); border-color: var(--text-hint); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 5px;}
+        .calendar-day-header { text-align: center; font-size: 0.7rem; color: var(--text-hint); padding-bottom: 4px; }
+        .calendar-cell { 
+            border-radius: 4px; background-color: var(--panel-border);
+            cursor: pointer; transition: all 0.2s; border: 1px solid transparent; 
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 4px; font-size: 0.65rem; color: var(--text-hint);
+            min-height: 55px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .calendar-cell.empty { background-color: transparent; border-color: transparent; cursor: default; box-shadow: none; }
+        .calendar-cell:not(.empty):hover { border-color: var(--text-hint); }
+        .calendar-cell.active { border-color: var(--text-main); transform: scale(1.05); z-index: 2; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; color: var(--text-main); }
+        
+        .calendar-cell.level-1 { background-color: rgba(0, 191, 165, 0.15); }
+        .calendar-cell.level-2 { background-color: rgba(0, 191, 165, 0.35); }
+        .calendar-cell.level-3 { background-color: rgba(0, 191, 165, 0.6); }
+        .calendar-cell.level-4 { background-color: rgba(0, 191, 165, 0.9); }
+        .calendar-cell.level-4 .cell-date, .calendar-cell.level-4 .cell-hp { color: #fff !important; }
+        .calendar-cell.level-4 .xp-gain { color: #ccffeb; }
+        .calendar-cell.toxic { border-color: var(--orange) !important; animation: blink 2s infinite; }
+
+        .cell-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+        .cell-date { font-weight: bold; color: var(--text-main); font-size: 0.75rem; }
+        .cell-hp { font-size: 0.6rem; padding: 1px 3px; border-radius: 2px; font-weight: bold; background: var(--bg); }
+        .hp-high { color: var(--green); border: 1px solid var(--green); }
+        .hp-mid { color: var(--text-hint); border: 1px solid var(--text-hint); }
+        .hp-low { color: var(--orange); border: 1px solid var(--orange); }
+
+        .cell-xp-row { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.65rem; font-family: monospace; line-height: 1.2; margin-top: auto; }
+        .xp-gain { color: var(--green); }
+        .xp-loss { color: var(--orange); }
+
+        .heatmap-detail { background: var(--bg); border: 1px solid var(--panel-border); padding: 10px; border-radius: 4px; font-size: 0.8rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);}
+        .heatmap-detail-title { font-weight: bold; margin-bottom: 8px; color: var(--text-main); border-bottom: 1px dashed var(--border); padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
+
+        /* ===== History Items ===== */
+        .history-list { display: flex; flex-direction: column; gap: 5px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .history-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            font-size: 0.75rem; padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-dim);
+            background: var(--bg); border-radius: 4px; margin-bottom: 4px;
+        }
+        .history-item:hover { background: var(--bg-panel); border-color: var(--green); }
+        .hist-time { width: 50px; color: var(--text-hint); }
+        .hist-attr { width: 70px; font-weight: bold; color: var(--cyan); }
+        .hist-xp { width: 80px; color: var(--green); text-align: right; font-weight: bold;}
+        .hist-xp.negative { color: var(--orange); }
+        .hist-desc { flex: 1; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .btn-revoke { 
+            font-size: 0.65rem; padding: 4px 8px; border-color: var(--border); color: var(--text-hint);
+            background: transparent; border-radius: 2px;
+        }
+        .btn-revoke:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+
+        /* ===== Oracle Log ===== */
+        #oracle-log-section { display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0; }
+        .oracle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .oracle-header .section-title { margin: 0; border: none; padding: 0; }
+        #oracle-log {
+            background: var(--bg-panel); border: 1px solid var(--border); padding: 10px;
+            height: auto; min-height: 140px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim);
+            display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; border-radius: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); flex-grow: 1;
+        }
+        .log-entry.positive { color: var(--green); font-weight: bold;}
+        .log-entry.negative { color: var(--orange); font-weight: bold;}
+        .log-entry.system { color: var(--cyan); }
+
+        /* ===== 底部操作 & Settings ===== */
+        .sys-ops { margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border); }
+        .sys-ops-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 8px; }
+        .sys-ops button { border: none; color: var(--text-dim); text-decoration: underline; font-size: 0.75rem; padding: 4px 0; background: transparent;}
+        .sys-ops button:hover { color: var(--text-main); }
+        .sys-ops-hint { font-size: 0.65rem; color: var(--text-hint); text-align: center; line-height: 1.5; }
+        
+        .settings-section { border-color: var(--text-hint) !important; background: var(--bg) !important; }
+        .settings-grid { display: grid; gap: 10px; margin-bottom: 12px; }
+        .settings-field label { display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; }
+
+        /* ===== Tooltip ===== */
+        .tip { position: relative; cursor: help; }
+        .tip::after {
+            content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 0;
+            width: max-content; max-width: 260px; background-color: var(--text-main); color: var(--bg-panel);
+            text-align: left; padding: 8px 10px; font-size: 0.7rem; border-radius: 4px;
+            opacity: 0; visibility: hidden; transition: opacity 0.15s; z-index: 100;
+            line-height: 1.5; pointer-events: none; white-space: normal; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tip:hover::after { opacity: 1; visibility: visible; }
+
+        /* ===== Confirm Overlay ===== */
+        .confirm-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(32,33,36,0.6); backdrop-filter: blur(2px); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .confirm-overlay.active { display: flex; }
+        .confirm-box { border: 1px solid var(--orange); background: var(--bg-panel); padding: 20px; max-width: 400px; width: 90%; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
+        .confirm-box p { margin-bottom: 15px; font-size: 0.9rem; line-height: 1.5; color: var(--text-main); }
+        .confirm-actions { display: flex; gap: 10px; }
+        .confirm-actions button { flex: 1; }
+
+        @keyframes blink { 50% { opacity: 0.3; } }
+    </style>
 </head>
 <body>
 
@@ -47,7 +376,7 @@
             </div>
 
             <div class="calib-group">
-                <span class="calib-label">物理躯干历史与习惯 (BODY)</span>
+                <span class="calib-label">物理躯干基底 (BODY_HABITS)</span>
                 <div class="radio-group" id="calib-body">
                     <label class="checkbox-label"><input type="checkbox" value="sedentary"> 每日久坐/低活动时间 > 8小时 (对冲 STR/CON)</label>
                     <label class="checkbox-label"><input type="checkbox" value="cardio"> 每周至少 2 次有氧运动 (+CON)</label>
@@ -58,7 +387,7 @@
             </div>
 
             <div class="calib-group">
-                <span class="calib-label">心智前额叶历史与习惯 (MIND)</span>
+                <span class="calib-label">心智前额叶基底 (MIND_HABITS)</span>
                 <div class="radio-group" id="calib-mind">
                     <label class="checkbox-label"><input type="checkbox" value="doomscroll"> 每日处于高频碎片信息环境(重度短视频等) (对冲 FOC)</label>
                     <label class="checkbox-label"><input type="checkbox" value="deepwork"> 每日需进行 4 小时以上深度工作/学习 (+FOC)</label>
@@ -83,14 +412,11 @@
 
     <!-- ===== DASHBOARD GRID ===== -->
     <div class="dashboard-grid">
-        <!-- ===== LEFT COLUMN (Profile) ===== -->
+
         <div class="col-left col-card">
-            
-            <!-- ===== L1: VITALS ===== -->
             <div class="section" id="vitals-section">
                 <div class="section-title">身体状态 (VITALS)</div>
                 <div class="section-desc">HP ≥ 80 经验收益 ×1.2；<br>HP < 40 高危警告。</div>
-                
                 <div class="hp-display">
                     <span id="ui-hp-val">--%</span>
                     <span id="ui-hp-status" style="display:none;"></span>
@@ -98,9 +424,23 @@
                 <div class="hp-bar-row" id="ui-hp-bar">
                     <div class="progress-bg" style="max-width: 100%;"><div class="progress-fill" id="hp-fill" style="width: 0%; background-color: var(--green);"></div></div>
                 </div>
-
-                <div class="section-subtitle">/// 睡眠恢复 (Watch Data)</div>
-                <div class="sleep-grid">
+            </div>
+            
+            <div class="section" id="record-section">
+                <div class="record-tabs">
+                    <div class="record-tab active" id="tab-ai" onclick="switchRecordTab('ai')">AI 智能日志</div>
+                    <div class="record-tab" id="tab-vitals" onclick="switchRecordTab('vitals')">身体体征参数</div>
+                </div>
+                
+                <div class="record-panel active" id="panel-ai">
+                    <div class="section-desc">用自然语言记录你的日常行为与感受，AI 会自动解析并分配经验。留空点击则单纯召唤 AI 点评当前状态。</div>
+                    <textarea id="in-oracle-journal" rows="4" placeholder="例如：昨晚总睡眠7.5小时，深睡1.5小时，REM 1.6小时，HRV 45，RHR 65。今天跑步了40分钟，专注阅读了1小时..."></textarea>
+                    <button id="btn-oracle-auto" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: var(--cyan); color: var(--cyan); background: rgba(0, 184, 212, 0.1);">[ 提交 AI 分析 ]</button>
+                </div>
+                
+                <div class="record-panel" id="panel-vitals">
+                    <div class="section-subtitle" style="margin-top: 0;">/// 睡眠恢复 (Watch Data)</div>
+                    <div class="sleep-grid">
                     <div class="hm-field tip" data-tip="Total Sleep: 昨晚总睡眠时长">
                         <label>总计 / Total</label>
                         <div class="hm-inputs">
@@ -123,87 +463,50 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="section-subtitle">/// 自主神经压力 (Vitals)</div>
-                <div class="vitals-grid">
+                    <div class="section-subtitle">/// 自主神经压力 (Vitals)</div>
+                    <div class="vitals-grid">
                     <div class="vitals-input">
-                        <label>HRV <span class="inline-tip-icon" onclick="document.getElementById('tip-hrv').style.display=document.getElementById('tip-hrv').style.display==='block'?'none':'block'">?</span></label>
-                        <div id="tip-hrv" class="inline-tip-content">心率变异性(HRV)。值越高代表神经越放松。</div>
+                        <label class="tip" data-tip="心率变异性(HRV)。值越高代表神经越放松。">HRV ⓘ</label>
                         <input type="number" id="in-hrv" min="1" placeholder="例如: 45">
                     </div>
                     <div class="vitals-input">
-                        <label>RHR <span class="inline-tip-icon" onclick="document.getElementById('tip-rhr').style.display=document.getElementById('tip-rhr').style.display==='block'?'none':'block'">?</span></label>
-                        <div id="tip-rhr" class="inline-tip-content">静息心率(RHR)。值越低代表身体越轻松。</div>
+                        <label class="tip" data-tip="静息心率(RHR)。值越低代表身体越轻松。">RHR ⓘ</label>
                         <input type="number" id="in-rhr" min="30" max="200" placeholder="例如: 65">
                     </div>
                 </div>
                 <button id="btn-sync-vitals" class="btn-primary" style="width: 100%; margin-top: 10px;">[ 同步体征 SYNC ]</button>
-            </div>
-
-            <!-- ===== RECORD TOGGLE SECTION ===== -->
-            <div class="section" id="record-section">
-                <div class="record-tabs">
-                    <div class="record-tab active" id="tab-ai" onclick="switchRecordTab('ai')">AI 智能日志</div>
-                    <div class="record-tab" id="tab-manual" onclick="switchRecordTab('manual')">手动记录</div>
                 </div>
                 
-                <div class="record-panel active" id="panel-ai">
-                    <div class="section-desc">用自然语言记录你的日常行为与感受，AI 会自动解析并分配经验。留空点击则单纯召唤 AI 点评当前状态。</div>
-                    <textarea id="in-oracle-journal" rows="4" placeholder="例如：昨晚总睡眠7.5小时，深睡1.5小时，REM 1.6小时，HRV 45，RHR 65。今天跑步了40分钟，专注阅读了1小时..."></textarea>
-                    <button id="btn-oracle-auto" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: var(--cyan); color: var(--cyan); background: rgba(0, 184, 212, 0.1);">[ 提交 AI 分析 ]</button>
-                </div>
+                <hr style="border: 0; border-top: 1px dashed var(--border); margin: 15px 0;">
                 
-                <div class="record-panel" id="panel-manual">
-                    <div class="manual-attr-select">
-                        <label class="active" id="lbl-man-str"><input type="radio" name="man-attr" value="STR" checked onchange="updateManualPresets()">STR</label>
-                        <label id="lbl-man-con"><input type="radio" name="man-attr" value="CON" onchange="updateManualPresets()">CON</label>
-                        <label id="lbl-man-foc"><input type="radio" name="man-attr" value="FOC" onchange="updateManualPresets()">FOC</label>
-                        <label id="lbl-man-wil"><input type="radio" name="man-attr" value="WIL" onchange="updateManualPresets()">WIL</label>
-                    </div>
-                    
-                    <div class="io-row">
-                        <div class="input-group">
-                            <input type="number" id="in-duration-manual" placeholder="时长/次数">
-                            <span class="unit-addon" id="unit-manual">分钟</span>
-                        </div>
-                        <select id="in-intensity-manual" style="flex:2; min-width:160px;">
-                            <!-- JS injected based on selection -->
-                        </select>
-                    </div>
-                    
-                    <div class="checkbox-row" style="margin-top: 10px;">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="chk-memory-tax">
-                            <span class="checkbox-text">
-                                <span class="checkbox-title">模糊回忆 / 记忆熵税 -30%</span>
-                                <span class="checkbox-desc">为过去补录数据时，自动打 7 折以对冲认知美化偏差。</span>
-                            </span>
-                        </label>
-                    </div>
-                    
-                    <button class="btn-primary" onclick="commitGlobalManual()" style="width: 100%; margin-top:10px; margin-bottom: 10px;">[ 注入 XP ]</button>
-                    
-                    <button id="btn-toxic" class="btn-danger btn-toxic" onclick="commitToxic()" style="margin-top: 5px; border-radius: 4px;">[ 记录违规/不良习惯 (扣除属性) ]</button>
+                
+                <!-- 全局记忆税 -->
+                <div class="checkbox-row" style="margin-top: 12px; margin-bottom: 0;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="chk-memory-tax">
+                        <span class="checkbox-text">
+                            <span class="checkbox-title">模糊回忆 / 记忆熵税 -30%</span>
+                            <span class="checkbox-desc">为过去补录数据时，自动打 7 折以对冲认知美化偏差。</span>
+                        </span>
+                    </label>
                 </div>
+                <button id="btn-toxic" class="btn-danger btn-toxic" onclick="commitToxic()" style="margin-top: 0; margin-bottom: 15px; border-radius: 4px;">[ 记录违规/不良习惯 ]</button>
             </div>
-
+            
             <!-- ===== L2: CORE (长线突触固化成果) ===== -->
             <div class="section" id="attributes-container" style="margin-bottom: 0;">
-                <div class="section-title">属性经验条 (ATTRIBUTES)</div>
-                <div id="attributes-list">
-                    <!-- JS Generated -->
-                </div>
+                <!-- JS Generated -->
             </div>
-            
+
+
         </div>
 
-        <!-- ===== RIGHT COLUMN (History & Settings) ===== -->
         <div class="col-right col-card">
-            
-            <!-- ===== MATRIX CALENDAR ===== -->
             <div class="section" id="heatmap-section">
+                <!-- ===== MATRIX CALENDAR ===== -->
+            
                 <div class="section-title">历史数据热力图</div>
-                <div class="section-desc">点选日期查看明细。绿色代表正向积累，橙色代表违规折损。</div>
+                <div class="section-desc">点选日期查看明细或补录行为。绿色代表正向积累，橙色代表违规折损。</div>
                 <div class="calendar-header">
                     <button class="calendar-nav-btn" id="cal-prev" onclick="changeMonth(-1)">◀ 上月</button>
                     <span id="cal-month-label" style="font-size: 0.8rem; color: var(--green);">YYYY - MM</span>
@@ -212,9 +515,11 @@
                 <div class="calendar-grid" id="calendar-grid">
                     <!-- JS Generated -->
                 </div>
+            </div>
+                <div id="day-context-title" style="margin-top: 10px; font-weight: bold; color: var(--green); font-size: 0.8rem;"></div>
                 <div class="heatmap-detail" id="heatmap-detail" style="display: block; border-color: var(--border);"></div>
             </div>
-
+            
             <!-- ===== ORACLE LOG ===== -->
             <div class="section" id="oracle-log-section">
                 <div class="oracle-header">
@@ -224,7 +529,6 @@
                     <div>> SYS_INIT COMPLETE. ENGINE V5 ONLINE.</div>
                 </div>
             </div>
-
             <!-- ===== SYSTEM OPS ===== -->
             <div class="section" id="sys-ops-section" style="margin-top: auto; margin-bottom: 0;">
                 <div class="section-title" style="color: var(--text-dim);">/// SYSTEM_DATA — 系统配置与数据</div>
@@ -258,75 +562,14 @@
                 </div>
             </div>
         </div>
+
     </div>
     
 <script>
-
 /**
  * PROJECT_FLESH — ENGINE V5.1
  * Incorporating Habit Calibration & Willpower Friction Concept
  */
-
-
-function switchRecordTab(tab) {
-    document.getElementById('tab-ai').classList.remove('active');
-    document.getElementById('tab-manual').classList.remove('active');
-    document.getElementById('panel-ai').classList.remove('active');
-    document.getElementById('panel-manual').classList.remove('active');
-    
-    document.getElementById('tab-' + tab).classList.add('active');
-    document.getElementById('panel-' + tab).classList.add('active');
-}
-
-function updateManualPresets() {
-    const selected = document.querySelector('input[name="man-attr"]:checked').value;
-    document.getElementById('in-intensity-manual').innerHTML = getPresetsHtml(selected);
-    document.getElementById('unit-manual').innerText = selected === 'WIL' ? '数值' : '分钟';
-    
-    document.querySelectorAll('.manual-attr-select label').forEach(lbl => lbl.classList.remove('active'));
-    document.getElementById('lbl-man-' + selected.toLowerCase()).classList.add('active');
-}
-
-function openManualInput(attr) {
-    switchRecordTab('manual');
-    document.querySelector(`input[name="man-attr"][value="${attr}"]`).checked = true;
-    updateManualPresets();
-    document.getElementById('in-duration-manual').focus();
-}
-
-function commitGlobalManual() {
-    const attr = document.querySelector('input[name="man-attr"]:checked').value;
-    const durVal = document.getElementById('in-duration-manual').value;
-    const duration = parseFloat(durVal) || 0;
-    let intensity = parseFloat(document.getElementById('in-intensity-manual').value) || 1.0;
-    
-    if (duration <= 0) { alert('请输入有效数值'); return; }
-    if (document.getElementById('chk-memory-tax').checked) intensity *= 0.7;
-
-    const actionTime = window.selectedHeatmapDate || Date.now();
-    let finalXp = Math.round(duration * intensity * DB.current_buff);
-    let tags = [];
-    
-    if (DB.current_debuffs && DB.current_debuffs.includes('BRAIN_FOG') && attr === 'FOC') {
-        finalXp = Math.round(finalXp * 0.90); tags.push('[脑雾 -10%]');
-    }
-    if (DB.current_debuffs && DB.current_debuffs.includes('MUSCLE_FATIGUE') && attr === 'STR') {
-        finalXp = Math.round(finalXp * 0.90); tags.push('[疲劳 -10%]');
-    }
-    const tagStr = tags.length > 0 ? ' ' + tags.join(' ') : '';
-    
-    DB.attributes[attr].total_xp += finalXp;
-    DB.attributes[attr].last_update = Date.now();
-    addActionLog('XP', [attr], finalXp, `[MANUAL] 录入${tagStr}`, actionTime);
-    logOracle(`> ${attr} 手动注入 +${finalXp}XP${tagStr}`, 'positive');
-    
-    document.getElementById('in-duration-manual').value = '';
-    document.getElementById('chk-memory-tax').checked = false;
-    saveData();
-    renderRadar();
-    renderHeatmap();
-    updateManualPresets();
-}
 
 // ===== 核心配置矩阵 =====
 const ATTR_CONFIG = {
@@ -460,7 +703,7 @@ function getBaseXpForLevel(level) {
 // XP -> Level 对象
 function calcLevelObj(total_xp) {
     if (total_xp < 0) total_xp = 0;
-    const level = Math.floor(Math.pow(total_xp / 100, 2 / 3)) + 1;
+    const level = Math.floor(Math.pow(total_xp / 100, 2 / 3) + 1e-9) + 1;
     const curr_base = 100 * Math.pow(level - 1, 1.5);
     const next_base = 100 * Math.pow(level, 1.5);
     const xp_in = total_xp - curr_base;
@@ -570,7 +813,7 @@ function showCalibration() {
         saveData();
         bootUI();
         logOracle(`> 坐标确立。物理引擎 V5.1 已绑定至 [${age}岁|${sex}|Habits:${habits.length}]。`, 'system');
-        window.location.reload(); // 强制刷新界面清理残余DOM状态
+        window.location.reload(); 
     });
 
     updatePreview();
@@ -838,8 +1081,7 @@ function getPresetsHtml(key) {
 }
 
 function renderRadar() {
-    const container = document.getElementById('attributes-list');
-    if (!container) return;
+    const container = document.getElementById('attributes-container');
     container.innerHTML = '';
     const msPerDay = 86400000;
     const todayMid = getMidnight(new Date());
@@ -848,23 +1090,52 @@ function renderRadar() {
         const conf = ATTR_CONFIG[key];
         const attr = DB.attributes[key];
         const stats = calcLevelObj(attr.total_xp);
+
         const pct = Math.max(0, Math.min(100, stats.progress * 100));
 
         const updateMid = getMidnight(new Date(attr.last_update));
         const daysPassed = Math.floor((todayMid - updateMid) / msPerDay);
         const daysLeft = conf.safe_days - daysPassed;
+        
         const actRate = getActualDecayRate(key, stats.level);
 
         let decayMsg, decayClass = 'attr-decay';
         if (conf.safe_days === 0) {
-            decayMsg = daysPassed === 0 ? '今日已激活' : `突触退化: -${(actRate*100).toFixed(2)}%/天`;
+            decayMsg = daysPassed === 0 ? '今日已激活' : `属性衰退: -${(actRate*100).toFixed(2)}%/天`;
             if (daysPassed > 0) decayClass += ' decaying';
         } else if (daysLeft > 0) {
             decayMsg = `保护期: ${daysLeft}天`;
         } else if (daysLeft === 0) {
             decayMsg = '⚠ 今日到期 (00:00 衰减)'; decayClass += ' decaying';
         } else {
-            decayMsg = `突触退化: -${(actRate*100).toFixed(2)}%/天`; decayClass += ' decaying';
+            decayMsg = `属性衰退: -${(actRate*100).toFixed(2)}%/天`; decayClass += ' decaying';
+        }
+
+        let inlineHtml = '';
+        if (window.openInlinePanel === key) {
+            let otherTags = Object.keys(ATTR_CONFIG).filter(k => k !== key).map(k => 
+                `<button class="mini-tag" onclick="this.classList.toggle('active')" data-attr="${k}">+${k}</button>`
+            ).join('');
+
+            inlineHtml = `
+            <div class="inline-input-panel" id="inline-${key}">
+                <div class="io-row">
+                    <div class="input-group">
+                        <input type="number" id="in-duration-${key}" placeholder="${key==='WIL'?'分钟/次数':'时长'}">
+                        <span class="unit-addon">${key==='WIL'?'数值':'分钟'}</span>
+                    </div>
+                    <select id="in-intensity-${key}" style="flex:2; min-width:180px;">
+                        ${getPresetsHtml(key)}
+                    </select>
+                </div>
+                <div class="inline-tags" id="inline-tags-${key}">
+                    <span class="tag-label">联动:</span>
+                    ${otherTags}
+                </div>
+                <div class="inline-actions">
+                    <button class="btn-primary" onclick="commitInline('${key}')" style="width: 100%;">[ 注入 XP ]</button>
+                </div>
+            </div>`;
         }
 
         container.insertAdjacentHTML('beforeend', `
@@ -873,15 +1144,17 @@ function renderRadar() {
                     <div class="attr-name-group">
                         <span class="attr-name">${key}</span>
                         <span class="attr-label">${conf.name}</span>
-                        <span class="attr-level">LV.${stats.level.toString().padStart(2, '0')}<span class="btn-add-xp" onclick="openManualInput('${key}')">+</span></span>
+                        <span class="attr-level">LV.${stats.level.toString().padStart(2, '0')}<span class="btn-add-xp" onclick="if(typeof event !== 'undefined' && event) event.stopPropagation(); toggleInlinePanel('${key}');">+</span></span>
                     </div>
-                    <span class="${decayClass}">${decayMsg}</span>
+                    <span class="${decayClass} tip" data-tip="当前等级衰减率(1/√LV): ${(actRate*100).toFixed(2)}%。基础率: ${(conf.base_decay*100).toFixed(1)}%">${decayMsg}</span>
                 </div>
-                <div class="xp-bar-container">
+                <div class="attr-desc">${conf.desc}</div>
+                <div class="progress-bar-container" style="cursor:pointer;" onclick="toggleInlinePanel('${key}')" title="点击展开/折叠输入栏">
                     <div class="progress-bg"><div class="progress-fill" style="width: ${pct}%"></div></div>
                     <span class="xp-text">${stats.xp_into_level} / ${stats.xp_needed}</span>
                     <span class="xp-total">Σ ${Math.floor(attr.total_xp)}</span>
                 </div>
+                ${inlineHtml}
             </div>
         `);
     });
@@ -1108,7 +1381,7 @@ async function callOracleAuto() {
     if (!text) text = "没有新的日志录入。请单纯基于我的历史数据给出一句锐评或建议。";
     
     const { api_url, api_key, model_id } = DB.settings;
-    if (!api_key) { logOracle('SYS: 先知离线。请在配置填入 API Key。', 'negative'); return; }
+    if (!api_key) { logOracle('SYS: AI 引擎未配置。请在配置区填入 API Key。', 'negative'); return; }
 
     const btn = document.getElementById('btn-oracle-auto');
     btn.disabled = true;
@@ -1148,7 +1421,7 @@ async function callOracleAuto() {
         if(!match) throw new Error("JSON parse error");
         let result = JSON.parse(match[0]);
         
-        logOracle(`[ORACLE]: ${result.eval}`, 'positive');
+        logOracle(`[AI 分析]: ${result.eval}`, 'positive');
         
         if (result.actions && result.actions.length > 0) {
             let hasSTR = false, hasCON = false;
@@ -1340,9 +1613,18 @@ function setupEventListeners() {
     });
 }
 
+function switchRecordTab(tab) {
+    document.getElementById('tab-ai').classList.remove('active');
+    document.getElementById('tab-vitals').classList.remove('active');
+    document.getElementById('panel-ai').classList.remove('active');
+    document.getElementById('panel-vitals').classList.remove('active');
+    
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+}
+
 // 引擎点火
 window.onload = initEngine;
-
 </script>
 </body>
 </html>
