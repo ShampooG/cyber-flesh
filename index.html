@@ -349,6 +349,34 @@
         .confirm-actions button { flex: 1; }
 
         @keyframes blink { 50% { opacity: 0.3; } }
+
+        /* 新的校准问卷样式 */
+        .calib-step { display: none; animation: fadeInRight 0.3s ease-out forwards; }
+        .calib-step.active { display: block; }
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .calib-progress-bar { display: flex; gap: 4px; margin-bottom: 20px; }
+        .calib-progress-segment { flex: 1; height: 4px; background: var(--panel-border); border-radius: 2px; transition: background 0.3s; }
+        .calib-progress-segment.active { background: var(--green); }
+        .calib-progress-segment.completed { background: rgba(0, 191, 165, 0.5); }
+        
+        .calib-nav { display: flex; justify-content: space-between; margin-top: 30px; gap: 10px; }
+        .calib-nav button { flex: 1; padding: 12px; font-size: 1rem; }
+        
+        .question-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .question-title { font-weight: bold; color: var(--text-main); margin-bottom: 10px; font-size: 0.95rem; }
+        .question-desc { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 12px; }
+        
+        .option-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
+        .option-grid.col-2 { grid-template-columns: 1fr 1fr; }
+        .option-card { 
+            background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; 
+            padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;
+            font-size: 0.85rem; color: var(--text-dim);
+        }
+        .option-card:hover { border-color: var(--green); }
+        .option-card.selected { background: var(--green-dim); border-color: var(--green); color: var(--green); font-weight: bold; }
+
     </style>
 </head>
 <body>
@@ -364,65 +392,196 @@
         </div>
     </div>
 
+
     <!-- 生物学基线校准系统 (首次启动时显示) -->
     <div class="calibration-overlay" id="calib-overlay" style="display: none;">
         <div class="calib-box">
-            <div class="calib-title">/// 系统初始化设定 ///</div>
-            <div class="calib-intro">
-                系统检测到新账户。根据运动科学文献，人体机能受年龄与习惯影响。为了准确计算你的初始基线，请提供以下信息。
-            </div>
+            <div class="calib-title" id="calib-header-title">/// 系统初始化设定 ///</div>
             
-            <div class="calib-group">
-                <div class="calib-row">
-                    <div style="flex:1;">
-                        <span class="calib-label">物理年龄 (AGE)</span>
-                        <input type="number" id="calib-age" value="25" min="12" max="100" style="width:100%;">
+            <div class="calib-progress-bar" id="calib-progress">
+                <div class="calib-progress-segment active" id="prog-0"></div>
+                <div class="calib-progress-segment" id="prog-1"></div>
+                <div class="calib-progress-segment" id="prog-2"></div>
+                <div class="calib-progress-segment" id="prog-3"></div>
+            </div>
+
+            <!-- STEP 0: 基础信息 -->
+            <div class="calib-step active" id="step-0">
+                <div class="calib-intro">欢迎接入义体计划。我们需要进行一次深度的生物学基线扫描，来准确映射你的初始属性(STR/CON/FOC/WIL)。</div>
+                
+                <div class="question-card">
+                    <div class="question-title">基础生理参数</div>
+                    <div class="calib-row">
+                        <div style="flex:1;">
+                            <span class="calib-label">年龄 (AGE)</span>
+                            <input type="number" id="q-age" value="25" min="12" max="100" style="width:100%;">
+                        </div>
+                        <div style="flex:1;">
+                            <span class="calib-label">性别 (SEX)</span>
+                            <select id="q-sex" style="width:100%;">
+                                <option value="M">男 (M)</option>
+                                <option value="F">女 (F)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div style="flex:1;">
-                        <span class="calib-label">生物性别 (SEX)</span>
-                        <select id="calib-sex" style="width:100%;">
-                            <option value="M">男 (Male)</option>
-                            <option value="F">女 (Female)</option>
-                        </select>
+                    <div class="calib-row" style="margin-top: 15px;">
+                        <div style="flex:1;">
+                            <span class="calib-label">身高 (cm) <span style="font-size: 0.7rem; color: var(--text-hint); font-weight: normal;">可选</span></span>
+                            <input type="number" id="q-height" placeholder="例如: 175" style="width:100%;">
+                        </div>
+                        <div style="flex:1;">
+                            <span class="calib-label">体重 (kg) <span style="font-size: 0.7rem; color: var(--text-hint); font-weight: normal;">可选</span></span>
+                            <input type="number" id="q-weight" placeholder="例如: 70" style="width:100%;">
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="calib-group">
-                <span class="calib-label">身体运动习惯 (BODY)</span>
-                <div class="radio-group" id="calib-body">
-                    <label class="checkbox-label"><input type="checkbox" value="sedentary"> 每日久坐/低活动时间 > 8小时 (对冲 STR/CON)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="cardio"> 每周至少 2 次有氧运动 (+CON)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="resistance"> 每周至少 2 次抗阻训练 (+STR)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="muscle_mem"> [肌肉记忆] 曾有长期运动习惯，底子好 (+STR/CON 起点)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="pro"> 专业运动员水平 (++全维度)</label>
+            <!-- STEP 1: 身体活动 (STR/CON) -->
+            <div class="calib-step" id="step-1">
+                <div class="question-card">
+                    <div class="question-title">力量与抗阻训练 (STR)</div>
+                    <div class="question-desc">包括举重、器械、自重训练（俯卧撑/引体向上）等</div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">累计训练年限</span>
+                        <div class="option-grid col-2" id="q-str-years">
+                            <div class="option-card selected" data-val="0">无经验/不到1年</div>
+                            <div class="option-card" data-val="1">1-3年 (中级)</div>
+                            <div class="option-card" data-val="3">3-5年 (高级)</div>
+                            <div class="option-card" data-val="5">5年以上 (精英)</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="calib-label" style="font-size:0.7rem;">每周训练频率</span>
+                        <div class="option-grid col-2" id="q-str-freq">
+                            <div class="option-card selected" data-val="0">不训练 / 0天</div>
+                            <div class="option-card" data-val="1">1-2天</div>
+                            <div class="option-card" data-val="3">3-4天</div>
+                            <div class="option-card" data-val="5">5天及以上</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question-card">
+                    <div class="question-title">心肺与有氧耐力 (CON)</div>
+                    <div class="question-desc">包括跑步、游泳、骑行、高强度间歇等</div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">如果不休息，你最远能连续跑多远？</span>
+                        <div class="option-grid col-2" id="q-con-dist">
+                            <div class="option-card selected" data-val="0">跑不了1公里</div>
+                            <div class="option-card" data-val="1">1-3公里</div>
+                            <div class="option-card" data-val="5">5-10公里</div>
+                            <div class="option-card" data-val="10">半马或以上</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question-card" style="border-color: var(--orange);">
+                    <div class="question-title" style="color: var(--orange);">最近3个月的运动状态变化？</div>
+                    <div class="question-desc">这决定了你的历史积累衰减了多少</div>
+                    <div class="option-grid col-2" id="q-trend">
+                        <div class="option-card" data-val="1.05">持续增加投入</div>
+                        <div class="option-card selected" data-val="1.0">保持原有频率</div>
+                        <div class="option-card" data-val="0.85">训练量明显减少</div>
+                        <div class="option-card" data-val="0.70">完全停止运动</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="calib-group">
-                <span class="calib-label">心智认知习惯 (MIND)</span>
-                <div class="radio-group" id="calib-mind">
-                    <label class="checkbox-label"><input type="checkbox" value="doomscroll"> 每日处于高频碎片信息环境(重度短视频等) (对冲 FOC)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="deepwork"> 每日需进行 4 小时以上深度工作/学习 (+FOC)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="meditation"> 长期保持阅读、冥想或刻意练习习惯 (+WIL)</label>
-                    <label class="checkbox-label"><input type="checkbox" value="cog_elite"> [脑力精英] 曾长期处于高压高认知负荷环境 (+FOC 起点)</label>
+            <!-- STEP 2: 认知意志 (FOC/WIL) -->
+            <div class="calib-step" id="step-2">
+                <div class="question-card">
+                    <div class="question-title">专注与信息摄入 (FOC)</div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">不看手机/切网页，你能持续深度工作多久？</span>
+                        <div class="option-grid col-2" id="q-foc-time">
+                            <div class="option-card selected" data-val="1">不到15分钟</div>
+                            <div class="option-card" data-val="2">15-30分钟</div>
+                            <div class="option-card" data-val="3">30-60分钟</div>
+                            <div class="option-card" data-val="5">1小时以上</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="calib-label" style="font-size:0.7rem;">每天花在短视频/社媒的无目的浏览时间</span>
+                        <div class="option-grid col-2" id="q-foc-doom">
+                            <div class="option-card" data-val="5">几乎没有 (<1h)</div>
+                            <div class="option-card selected" data-val="3">适度 (1-3h)</div>
+                            <div class="option-card" data-val="1">较多 (3-5h)</div>
+                            <div class="option-card" data-val="0">严重依赖 (5h+)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question-card">
+                    <div class="question-title">自控与意志力 (WIL)</div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">当你决定养成一个新习惯(锻炼/阅读等)，通常能坚持多久？</span>
+                        <div class="option-grid col-2" id="q-wil-habit">
+                            <div class="option-card selected" data-val="1">不到1周</div>
+                            <div class="option-card" data-val="2">1-4周</div>
+                            <div class="option-card" data-val="4">1-3个月</div>
+                            <div class="option-card" data-val="5">3个月以上</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="calib-label" style="font-size:0.7rem;">当运动或工作变得痛苦时，你通常会？</span>
+                        <div class="option-grid" id="q-wil-pain">
+                            <div class="option-card selected" data-val="1">立刻停止，逃避痛苦</div>
+                            <div class="option-card" data-val="3">偶尔能咬牙坚持一下</div>
+                            <div class="option-card" data-val="5">大多能克服阻力完成目标</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="calib-preview">
-                <div class="calib-preview-title">=> 预估初始基线 <=</div>
-                <div class="calib-preview-levels">
-                    <div id="preview-str">STR LV.00</div>
-                    <div id="preview-con">CON LV.00</div>
-                    <div id="preview-foc">FOC LV.00</div>
-                    <div id="preview-wil">WIL LV.00</div>
+            <!-- STEP 3: 生活状态全局修正 -->
+            <div class="calib-step" id="step-3">
+                <div class="question-card">
+                    <div class="question-title">睡眠质量 (影响所有属性)</div>
+                    <div class="option-grid col-2" id="q-mod-sleep">
+                        <div class="option-card selected" data-val="1.0">很好 (充分恢复)</div>
+                        <div class="option-card" data-val="0.95">一般 (偶尔失眠/疲惫)</div>
+                        <div class="option-card" data-val="0.90">较差 (经常睡不好)</div>
+                        <div class="option-card" data-val="0.80">很差 (严重睡眠障碍)</div>
+                    </div>
+                </div>
+
+                <div class="question-card">
+                    <div class="question-title">日常压力水平 (影响心智属性)</div>
+                    <div class="option-grid" id="q-mod-stress">
+                        <div class="option-card selected" data-val="1.0">低/适度 (感觉能掌控生活)</div>
+                        <div class="option-card" data-val="0.90">较高 (经常感到焦虑/疲惫)</div>
+                        <div class="option-card" data-val="0.80">极高 (长期处于高压/抑郁/耗竭状态)</div>
+                    </div>
+                </div>
+                
+                <div class="question-card">
+                    <div class="question-title">饮食习惯 (影响所有属性)</div>
+                    <div class="option-grid" id="q-mod-diet">
+                        <div class="option-card selected" data-val="1.0">混合饮食，比较均衡</div>
+                        <div class="option-card" data-val="0.95">经常吃外卖/快餐/高糖食品</div>
+                        <div class="option-card" data-val="1.05">严格管理，坚持健康/地中海饮食等</div>
+                    </div>
+                </div>
+
+                <div class="calib-preview">
+                    <div class="calib-preview-title">=> 系统运算完毕 预估初始基线 <=</div>
+                    <div class="calib-preview-levels">
+                        <div id="preview-str">STR LV.00</div>
+                        <div id="preview-con">CON LV.00</div>
+                        <div id="preview-foc">FOC LV.00</div>
+                        <div id="preview-wil">WIL LV.00</div>
+                    </div>
                 </div>
             </div>
 
-            <button id="btn-finish-calib" class="btn-primary" style="width: 100%; padding: 12px; font-size: 1.1rem;">[ 保存设定并启动系统 ]</button>
+            <div class="calib-nav">
+                <button class="btn-danger" id="btn-calib-prev" style="display:none;" onclick="calibNav(-1)">[ 上一步 ]</button>
+                <button class="btn-primary" id="btn-calib-next" onclick="calibNav(1)">[ 下一步 ]</button>
+                <button class="btn-primary" id="btn-finish-calib" style="display:none;" onclick="commitCalibration()">[ 确认基线并启动 ]</button>
+            </div>
         </div>
     </div>
-
     <!-- ===== SECTION 1: CALENDAR + VITALS + RECORD ===== -->
     <div class="card" id="card-calendar">
         <div class="section">
@@ -560,6 +719,7 @@
                     <span class="icon">📥</span> 导入数据
                 </div>
                 <input type="file" id="file-import" style="display:none;" accept=".json">
+
                 <div class="settings-dropdown-item" id="btn-toggle-settings">
                     <span class="icon">🤖</span> AI 配置
                 </div>
@@ -721,6 +881,185 @@ function calcBaselineLevel(attr, age, sex, habits) {
 }
 
 // 经验反推公式：根据 Level 获取初始 XP
+
+let currentCalibStep = 0;
+const totalCalibSteps = 4;
+
+function setupOptionCards() {
+    const grids = document.querySelectorAll('.option-grid');
+    grids.forEach(grid => {
+        const cards = grid.querySelectorAll('.option-card');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                cards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                updateCalibrationPreview();
+            });
+        });
+    });
+}
+
+function getSelectedVal(gridId) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return null;
+    const selected = grid.querySelector('.option-card.selected');
+    return selected ? parseFloat(selected.getAttribute('data-val')) : 0;
+}
+
+function calibNav(dir) {
+    if (dir === 1 && currentCalibStep === 0) {
+        const ageInput = parseInt(document.getElementById('q-age').value);
+        if (!ageInput || ageInput < 12 || ageInput > 100) {
+            alert('请先输入有效的物理年龄 (12-100岁)');
+            return;
+        }
+    }
+
+    const nextStep = currentCalibStep + dir;
+    if (nextStep < 0 || nextStep >= totalCalibSteps) return;
+    
+    // Update UI steps
+    document.getElementById(`step-${currentCalibStep}`).classList.remove('active');
+    document.getElementById(`step-${nextStep}`).classList.add('active');
+    
+    // Update Progress Bar
+    document.getElementById(`prog-${currentCalibStep}`).classList.remove('active');
+    if (dir > 0) document.getElementById(`prog-${currentCalibStep}`).classList.add('completed');
+    else document.getElementById(`prog-${nextStep}`).classList.remove('completed');
+    document.getElementById(`prog-${nextStep}`).classList.add('active');
+    
+    currentCalibStep = nextStep;
+    
+    // Update Buttons
+    document.getElementById('btn-calib-prev').style.display = currentCalibStep > 0 ? 'block' : 'none';
+    if (currentCalibStep === totalCalibSteps - 1) {
+        document.getElementById('btn-calib-next').style.display = 'none';
+        document.getElementById('btn-finish-calib').style.display = 'block';
+        updateCalibrationPreview();
+    } else {
+        document.getElementById('btn-calib-next').style.display = 'block';
+        document.getElementById('btn-finish-calib').style.display = 'none';
+    }
+}
+
+function updateCalibrationPreview() {
+    const age = parseInt(document.getElementById('q-age').value) || 25;
+    const sex = document.getElementById('q-sex').value;
+    const isMale = sex === 'M';
+
+    // 1. Base Multipliers (Age & Sex)
+    const ageCurve = (a) => {
+        if (a < 20) return 0.95;
+        if (a <= 28) return 1.0;
+        if (a <= 35) return 0.95;
+        if (a <= 45) return 0.85;
+        if (a <= 55) return 0.75;
+        return 0.60;
+    };
+    let baseMult = ageCurve(age);
+    let strMult = baseMult * (isMale ? 1.0 : 0.65);
+    let conMult = baseMult * (isMale ? 1.0 : 0.75);
+
+    // 2. BMI Modifier
+    const h = parseFloat(document.getElementById('q-height').value);
+    const w = parseFloat(document.getElementById('q-weight').value);
+    let bmiMod = 1.0;
+    if (h && w) {
+        const bmi = w / ((h/100) * (h/100));
+        const strFreq = getSelectedVal('q-str-freq');
+        if (bmi < 18.5) bmiMod = 0.95;
+        else if (bmi >= 25 && bmi < 30) bmiMod = strFreq > 1 ? 1.0 : 0.95; 
+        else if (bmi >= 30) bmiMod = strFreq > 1 ? 0.95 : 0.85; 
+    }
+    
+    // 3. Extract Questionnaire Scores
+    // STR: max depends on years of experience, current frequency provides the foundation
+    const strYears = getSelectedVal('q-str-years'); // 0, 1, 3, 5
+    const strFreq = getSelectedVal('q-str-freq'); // 0, 1, 3, 5
+    let strRaw = 1 + (strYears * 2) + strFreq; // Range 1 to 16
+    
+    // CON: max continuous distance
+    const conDist = getSelectedVal('q-con-dist'); // 0, 1, 5, 10
+    let conRaw = 1 + (conDist * 1.5); // Range 1 to 16
+    
+    // Trend modifier (Historical Decay)
+    const trendMod = getSelectedVal('q-trend'); // 0.7, 0.85, 1.0, 1.05
+    
+    // FOC: time vs doomscroll
+    const focTime = getSelectedVal('q-foc-time'); // 1, 2, 3, 5
+    const focDoom = getSelectedVal('q-foc-doom'); // 0, 1, 3, 5
+    let focRaw = 1 + (focTime * 2) + focDoom; // Range 1 to 16
+    
+    // WIL: habit vs pain
+    const wilHabit = getSelectedVal('q-wil-habit'); // 1, 2, 4, 5
+    const wilPain = getSelectedVal('q-wil-pain'); // 1, 3, 5
+    let wilRaw = 1 + (wilHabit * 2) + (wilPain * 1.2); // Range 1 to 17
+    
+    // 4. Global Modifiers
+    const modSleep = getSelectedVal('q-mod-sleep');
+    const modStress = getSelectedVal('q-mod-stress');
+    const modDiet = getSelectedVal('q-mod-diet');
+
+    // 5. Final Calculation
+    const MAX_LEVEL = 22;
+    
+    let strLvl = Math.round((strRaw / 16) * MAX_LEVEL * strMult * trendMod * modSleep * modDiet * bmiMod);
+    let conLvl = Math.round((conRaw / 16) * MAX_LEVEL * conMult * trendMod * modSleep * modDiet * bmiMod);
+    let focLvl = Math.round((focRaw / 16) * MAX_LEVEL * baseMult * modSleep * modStress * modDiet);
+    let wilLvl = Math.round((wilRaw / 17) * MAX_LEVEL * baseMult * modSleep * modStress * modDiet);
+
+    const clamp = (val) => Math.max(1, Math.min(MAX_LEVEL, val));
+    strLvl = clamp(strLvl);
+    conLvl = clamp(conLvl);
+    focLvl = clamp(focLvl);
+    wilLvl = clamp(wilLvl);
+
+    if (document.getElementById('preview-str')) {
+        document.getElementById('preview-str').textContent = `STR LV.${strLvl.toString().padStart(2, '0')}`;
+        document.getElementById('preview-con').textContent = `CON LV.${conLvl.toString().padStart(2, '0')}`;
+        document.getElementById('preview-foc').textContent = `FOC LV.${focLvl.toString().padStart(2, '0')}`;
+        document.getElementById('preview-wil').textContent = `WIL LV.${wilLvl.toString().padStart(2, '0')}`;
+    }
+    
+    return { strLvl, conLvl, focLvl, wilLvl, age, sex };
+}
+
+function showCalibration() {
+    setupOptionCards();
+    document.getElementById('calib-overlay').style.display = 'flex';
+    document.getElementById('q-age').addEventListener('input', updateCalibrationPreview);
+    document.getElementById('q-height').addEventListener('input', updateCalibrationPreview);
+    document.getElementById('q-weight').addEventListener('input', updateCalibrationPreview);
+    updateCalibrationPreview();
+}
+
+function commitCalibration() {
+    const results = updateCalibrationPreview();
+    
+    DB.profile = {
+        age: results.age,
+        sex: results.sex,
+        calibratedAt: new Date().getTime(),
+        initialLevels: {
+            STR: results.strLvl,
+            CON: results.conLvl,
+            FOC: results.focLvl,
+            WIL: results.wilLvl
+        }
+    };
+    
+    ['STR', 'CON', 'FOC', 'WIL'].forEach(k => {
+        DB.attributes[k].total_xp = getBaseXpForLevel(DB.profile.initialLevels[k]);
+        DB.attributes[k].last_update = Date.now();
+    });
+
+    saveData();
+    document.getElementById('calib-overlay').style.display = 'none';
+    addActionLog('SYSTEM', ['SYS'], 0, '生物学基线扫描完成。初始属性已校准。');
+    bootUI();
+    showConfirm('基线校准完成', `根据你的生理参数、活动习惯与生活状态，系统已完成深度校准。<br><br>你的初始属性为：<br>STR: ${results.strLvl} | CON: ${results.conLvl}<br>FOC: ${results.focLvl} | WIL: ${results.wilLvl}<br><br>开始你的肉体飞升之旅吧。`, () => { document.getElementById('confirm-overlay').classList.remove('active'); });
+}
+
 function getBaseXpForLevel(level) {
     if (level <= 1) return 0;
     return 100 * Math.pow(level - 1, 1.5);
@@ -820,52 +1159,7 @@ function loadData() {
 }
 
 // ===== Calibration UI 逻辑 =====
-function showCalibration() {
-    const overlay = document.getElementById('calib-overlay');
-    overlay.style.display = 'flex';
 
-    const getHabits = () => {
-        return Array.from(document.querySelectorAll('#calib-body input:checked, #calib-mind input:checked')).map(el => el.value);
-    };
-
-    const updatePreview = () => {
-        const age = parseInt(document.getElementById('calib-age').value) || 25;
-        const sex = document.getElementById('calib-sex').value;
-        const habits = getHabits();
-
-        ['STR', 'CON', 'FOC', 'WIL'].forEach(attr => {
-            const lv = calcBaselineLevel(attr, age, sex, habits);
-            document.getElementById(`preview-${attr.toLowerCase()}`).innerText = `${attr} LV.${lv.toString().padStart(2, '0')}`;
-        });
-    };
-
-    document.getElementById('calib-age').addEventListener('input', updatePreview);
-    document.getElementById('calib-sex').addEventListener('change', updatePreview);
-    document.querySelectorAll('#calib-body input, #calib-mind input').forEach(el => el.addEventListener('change', updatePreview));
-
-    document.getElementById('btn-finish-calib').addEventListener('click', () => {
-        const age = parseInt(document.getElementById('calib-age').value) || 25;
-        const sex = document.getElementById('calib-sex').value;
-        const habits = getHabits();
-
-        DB.profile = { age, sex, habits, createdAt: Date.now() };
-        
-        // 注入初始经验
-        ['STR', 'CON', 'FOC', 'WIL'].forEach(attr => {
-            const lv = calcBaselineLevel(attr, age, sex, habits);
-            DB.attributes[attr].total_xp = getBaseXpForLevel(lv);
-            DB.attributes[attr].last_update = Date.now();
-        });
-
-        overlay.style.display = 'none';
-        saveData();
-        bootUI();
-        logOracle(`> 坐标确立。物理引擎 V5.1 已绑定至 [${age}岁|${sex}|Habits:${habits.length}]。`, 'system');
-        window.location.reload(); 
-    });
-
-    updatePreview();
-}
 
 // ===== 衰减：突触固化定律 =====
 function getActualDecayRate(attr, level) {
@@ -1222,6 +1516,13 @@ function renderHeatmap() {
     const month = currentCalDate.getMonth();
     label.innerText = `${year} - ${(month+1).toString().padStart(2, '0')}`;
     
+    const now = new Date();
+    const isCurrentOrFutureMonth = (year > now.getFullYear()) || (year === now.getFullYear() && month >= now.getMonth());
+    const nextBtn = document.getElementById('cal-next');
+    if (nextBtn) {
+        nextBtn.style.display = isCurrentOrFutureMonth ? 'none' : 'block';
+    }
+    
     grid.innerHTML = `
         <div class="calendar-day-header">SUN</div>
         <div class="calendar-day-header">MON</div>
@@ -1357,14 +1658,14 @@ function renderHeatmapDetail(dMid, logs, dateStr, isToday) {
         if (entry.revoked) { xpStr = '<s>REVOKED</s>'; xpClass = 'hist-xp negative'; }
 
         let btnHtml = '';
-        if (!entry.revoked && entry.type !== 'TOXIC' && entry.type !== 'VITALS') {
+        if (!entry.revoked && entry.type !== 'TOXIC' && entry.type !== 'VITALS' && entry.type !== 'SYSTEM') {
             btnHtml = `<button class="btn-revoke" onclick="revokeAction('${entry.id}')">[撤销]</button>`;
         }
 
         list.insertAdjacentHTML('beforeend', `
             <div class="history-item" style="background: transparent; padding: 4px 0; border-bottom: 1px dashed var(--border);">
                 <span class="hist-time" style="width: 50px;">${timeStr}</span>
-                <span class="hist-attr">${(entry.attrs || []).join('+')}</span>
+                <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
                 <span class="${xpClass}">${xpStr}</span>
                 <span class="hist-desc" title="${entry.desc}">${entry.desc}</span>
                 ${btnHtml}
@@ -1393,15 +1694,15 @@ function renderHistory() {
         if (entry.revoked) { xpStr = '<s>REVOKED</s>'; xpClass = 'hist-xp negative'; }
 
         let btnHtml = '';
-        // 允许撤回最近的 10 条（非 TOXIC 且未撤销）
-        if (idx < 10 && !entry.revoked && entry.type !== 'TOXIC') {
+        // 允许撤回最近的 10 条（非 TOXIC、VITALS 或 SYSTEM 且未撤销）
+        if (idx < 10 && !entry.revoked && entry.type !== 'TOXIC' && entry.type !== 'VITALS' && entry.type !== 'SYSTEM') {
             btnHtml = `<button class="btn-revoke" onclick="revokeAction('${entry.id}')">[撤销]</button>`;
         }
 
         list.insertAdjacentHTML('beforeend', `
             <div class="history-item">
                 <span class="hist-time">${timeStr}</span>
-                <span class="hist-attr">${entry.attrs.join('+')}</span>
+                <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
                 <span class="${xpClass}">${xpStr}</span>
                 <span class="hist-desc" title="${entry.desc}">${entry.desc}</span>
                 ${btnHtml}
