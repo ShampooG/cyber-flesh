@@ -5,24 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="义体计划">
-    <title>PROJECT_FLESH // V5.3</title>
+    <meta name="apple-mobile-web-app-title" content="个人成长系统">
+    <title>Life Tracker // V6.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ===== 基础与全局 ===== */
         :root {
-            --bg: #F0F2F5;
+            /* 亮色现代简约主题 */
+            --bg: #F5F7FA;
             --bg-panel: #FFFFFF;
-            --text-main: #212529;
-            --text-dim: #495057;
-            --text-hint: #868E96;
-            --border: #DEE2E6;
-            --panel-border: #E9ECEF;
-            --green: #00BFA5;
-            --green-dim: rgba(0, 191, 165, 0.1);
-            --orange: #E65100;
-            --orange-dim: rgba(230, 81, 0, 0.08);
-            --cyan: #00B8D4;
-            --font-mono: 'Courier New', Courier, 'Fira Code', monospace;
+            --text-main: #1D1D1F;
+            --text-dim: #515154;
+            --text-hint: #86868B;
+            --border: #D2D2D7;
+            --panel-border: #E5E5EA;
+            /* 强调色：现代苹果风 */
+            --primary: #0071E3; 
+            --primary-dim: rgba(0, 113, 227, 0.1);
+            --green: #34C759;
+            --green-dim: rgba(52, 199, 89, 0.1);
+            --orange: #FF3B30;
+            --orange-dim: rgba(255, 59, 48, 0.08);
+            --cyan: #32ADE6;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
@@ -30,13 +36,14 @@
         body {
             background-color: var(--bg);
             color: var(--text-main);
-            font-family: var(--font-mono);
+            font-family: var(--font-main);
             line-height: 1.5;
-            padding: 12px;
+            padding: 16px;
             max-width: 600px;
             margin: 0 auto;
             overflow-x: hidden;
-            font-size: 14px;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* 基础控件 */
@@ -44,12 +51,13 @@
             background: var(--bg-panel);
             border: 1px solid var(--border);
             color: var(--text-main);
-            font-family: var(--font-mono);
-            font-size: 13px;
-            padding: 8px 12px;
+            font-family: var(--font-main);
+            font-size: 14px;
+            padding: 10px 14px;
             outline: none;
             appearance: none;
-            border-radius: 2px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
         input[type="checkbox"] {
             appearance: auto;
@@ -65,18 +73,16 @@
         
         button {
             cursor: pointer;
-            text-transform: uppercase;
-            font-weight: bold;
-            transition: all 0.15s ease;
-            letter-spacing: 0.5px;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
         
-        button:hover { background: var(--border); }
-        button:active { background: var(--text-main); color: var(--bg-panel); }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
-        button.btn-primary { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-        button.btn-primary:hover { background: var(--green); color: white; }
-        button.btn-primary:active { background: var(--green); filter: brightness(0.9); }
+        button:hover { background: var(--panel-border); }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.btn-primary { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
+        button.btn-primary:hover { background: var(--primary); color: white; }
+        button.btn-primary:active { background: var(--primary); filter: brightness(0.9); }
         button.btn-danger { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
         button.btn-danger:hover { background: var(--orange); color: white; }
         .btn-danger { background-color: transparent; color: var(--orange); border: 1px solid var(--orange); }
@@ -86,298 +92,306 @@
         .card {
             background: var(--bg-panel);
             border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-            margin-bottom: 12px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.04);
+            margin-bottom: 16px;
             overflow: hidden;
+            transition: box-shadow 0.3s ease;
         }
+        .card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.02); }
         .section {
-            padding: 20px;
+            padding: 24px;
             position: relative;
         }
         .section + .section {
-            border-top: 1px dashed var(--panel-border);
+            border-top: 1px solid var(--panel-border);
         }
         .section-title {
-            color: var(--text-dim); font-size: 0.8rem; letter-spacing: 1px; font-weight: bold;
-            margin-bottom: 12px; padding-bottom: 8px; text-transform: uppercase;
+            color: var(--text-main); font-size: 1rem; font-weight: 600;
+            margin-bottom: 12px; padding-bottom: 8px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .section-desc { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 16px; line-height: 1.4; border-left: 2px solid var(--border); padding-left: 10px;}
+        .section-desc { font-size: 0.85rem; color: var(--text-hint); margin-bottom: 16px; line-height: 1.5; background: var(--bg); padding: 10px 12px; border-radius: 8px;}
 
         /* ===== Calibration Overlay ===== */
         .calibration-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(248,249,250,0.95);
-            backdrop-filter: blur(5px);
+            background: rgba(245,247,250,0.85);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             z-index: 2000;
             display: flex; flex-direction: column;
             padding: 20px;
             overflow-y: auto;
         }
-        .calib-box { max-width: 600px; margin: 0 auto; width: 100%; border: 1px solid var(--green); background: var(--bg-panel); padding: 20px; box-shadow: 0 4px 12px rgba(0,191,165,0.15); border-radius: 4px;}
-        .calib-title { color: var(--green); font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid var(--green); padding-bottom: 10px;}
-        .calib-intro { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px; }
+        .calib-box { max-width: 600px; margin: 0 auto; width: 100%; background: var(--bg-panel); padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border-radius: 20px; border: 1px solid var(--panel-border);}
+        .calib-title { color: var(--text-main); font-size: 1.4rem; font-weight: 600; margin-bottom: 15px; border-bottom: 1px solid var(--panel-border); padding-bottom: 15px;}
+        .calib-intro { font-size: 0.95rem; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6;}
         .calib-group { margin-bottom: 20px; }
-        .calib-label { display: block; font-size: 0.8rem; color: var(--cyan); margin-bottom: 8px; font-weight: bold;}
-        .calib-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .calib-label { display: block; font-size: 0.85rem; color: var(--text-main); margin-bottom: 8px; font-weight: 500;}
+        .calib-row { display: flex; gap: 12px; margin-bottom: 12px; }
         .calib-row input, .calib-row select { flex: 1; border-color: var(--border); }
         .radio-group { display: flex; flex-direction: column; gap: 8px; }
-        .calib-preview { background: var(--bg); border: 1px solid var(--border); padding: 15px; margin-top: 20px; margin-bottom: 20px; text-align: center; border-radius: 4px;}
-        .calib-preview-title { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; }
-        .calib-preview-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 1.1rem; font-weight: bold; color: var(--green); }
+        .calib-preview { background: var(--bg); border: 1px solid var(--panel-border); padding: 20px; margin-top: 24px; margin-bottom: 24px; text-align: center; border-radius: 12px;}
+        .calib-preview-title { font-size: 0.85rem; color: var(--text-hint); margin-bottom: 12px; }
+        .calib-preview-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 1.2rem; font-weight: 600; color: var(--primary); }
         
         /* ===== Vitals ===== */
-        .section-subtitle { font-size: 0.7rem; color: var(--text-hint); font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid var(--panel-border); padding-bottom: 4px; letter-spacing: 0.5px;}
-        .sleep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .section-subtitle { font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: 12px; padding-bottom: 6px; }
+        .sleep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
         .hm-field { display: flex; flex-direction: column; }
-        .hm-field label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 6px; font-weight: bold;}
-        .hm-inputs { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--bg); transition: border 0.2s;}
-        .hm-inputs:focus-within { border-color: var(--green); }
-        .hm-inputs input { border: none; background: transparent; padding: 6px 2px; text-align: center; font-family: monospace; font-size: 0.85rem; font-weight: bold; width: 100%; border-radius: 0; min-width: 0;}
+        .hm-field label { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 8px; font-weight: 500;}
+        .hm-inputs { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-panel); transition: border 0.2s;}
+        .hm-inputs:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-dim); }
+        .hm-inputs input { border: none; background: transparent; padding: 8px 4px; text-align: center; font-size: 0.95rem; font-weight: 500; width: 100%; border-radius: 0; min-width: 0;}
         .hm-inputs input:focus { box-shadow: none; outline: none; }
-        .hm-inputs span { color: var(--text-hint); font-size: 0.7rem; padding-right: 4px; font-weight: bold; }
+        .hm-inputs span { color: var(--text-hint); font-size: 0.8rem; padding-right: 8px; font-weight: 500; }
         
-        .vitals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .vitals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .vitals-input { display: flex; flex-direction: column; }
-        .vitals-input label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 6px; cursor: help; font-weight: bold;}
-        .hp-display { font-size: 2.5rem; font-weight: bold; display: flex; align-items: center; gap: 15px; margin-bottom: 4px; }
+        .vitals-input label { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 8px; cursor: help; font-weight: 500;}
+        .hp-display { font-size: 2.5rem; font-weight: 600; display: flex; align-items: center; gap: 15px; margin-bottom: 8px; letter-spacing: -1px;}
         .hp-bar-row { margin-bottom: 15px; display: flex; align-items: center; width: 100%; }
-        .status-badge { font-size: 0.85rem; padding: 2px 8px; border: 1px solid transparent; border-radius: 2px; }
-        .status-buff { color: white; background-color: var(--green); }
-        .status-warn { color: white; background-color: var(--orange); }
+        .status-badge { font-size: 0.75rem; padding: 4px 10px; border: none; border-radius: 20px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;}
+        .status-buff { color: #155724; background-color: #d4edda; }
+        .status-warn { color: #856404; background-color: #fff3cd; }
+        .status-danger { color: #721c24; background-color: #f8d7da; }
 
         /* ===== Attributes ===== */
-        .attr-row { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+        .attr-row { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--panel-border); }
         .attr-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .attr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;}
+        .attr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;}
         .attr-name-group { display: flex; align-items: baseline; gap: 8px; }
-        .attr-name { font-weight: bold; color: var(--green); }
-        .attr-label { font-size: 0.75rem; color: var(--text-dim); }
-        .attr-level { color: var(--green); font-weight: bold; }
-        .attr-decay { font-size: 0.75rem; color: var(--text-dim); }
+        .attr-name { font-weight: 700; color: var(--text-main); font-size: 1.1rem; }
+        .attr-label { font-size: 0.8rem; color: var(--text-hint); }
+        .attr-level { color: var(--primary); font-weight: 600; font-size: 0.95rem; }
+        .attr-decay { font-size: 0.75rem; color: var(--text-hint); }
         .attr-decay.decaying { color: var(--orange); animation: blink 2s infinite; }
-        .attr-desc { font-size: 0.7rem; color: var(--text-hint); margin-bottom: 5px; }
-        .progress-bar-container { display: flex; align-items: center; gap: 12px; width: 100%; }
-        .progress-bg { flex: 1; height: 8px; background-color: var(--bg); border-radius: 4px; overflow: hidden; position: relative; border: 1px solid var(--border); }
-        .progress-fill { height: 100%; background-color: var(--green); box-shadow: 0 0 8px rgba(0,191,165,0.4); transition: width 0.3s ease; border-radius: 3px; }
-        .xp-text { font-size: 0.75rem; color: var(--text-dim); min-width: 60px; text-align: right; font-family: monospace;}
-        .xp-total { font-size: 0.65rem; color: var(--text-hint); margin-left: auto; font-family: monospace; }
+        .attr-desc { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 10px; }
+        .progress-bar-container { display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer;}
+        .progress-bg { flex: 1; height: 10px; background-color: var(--panel-border); border-radius: 5px; overflow: hidden; position: relative; }
+        .progress-fill { height: 100%; background-color: var(--primary); transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 5px; }
+        .xp-text { font-size: 0.8rem; color: var(--text-dim); min-width: 65px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 500;}
+        .xp-total { font-size: 0.75rem; color: var(--text-hint); margin-left: auto; font-variant-numeric: tabular-nums; }
 
         /* ===== Inline Input Panel ===== */
         .io-row { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
         .input-group { display: flex; align-items: stretch; flex: 1; min-width: 140px; }
-        .input-group input { border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; border-right: none; font-weight: bold; width: 100%; }
-        .unit-addon { display: flex; align-items: center; padding: 0 12px; background: var(--bg); border: 1px solid var(--border); border-top-right-radius: 6px; border-bottom-right-radius: 6px; color: var(--text-dim); font-size: 0.8rem; white-space: nowrap; }
+        .input-group input { border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; border-right: none; font-weight: 500; width: 100%; }
+        .unit-addon { display: flex; align-items: center; padding: 0 12px; background: var(--bg); border: 1px solid var(--border); border-top-right-radius: 8px; border-bottom-right-radius: 8px; color: var(--text-dim); font-size: 0.85rem; white-space: nowrap; }
         
-        #in-oracle-journal { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.85rem; color: var(--text-main); resize: vertical; line-height: 1.5; transition: border-color 0.2s; }
-        #in-oracle-journal:focus { border-color: var(--cyan); outline: none; box-shadow: 0 0 5px rgba(0,184,212,0.3); }
+        #in-oracle-journal { width: 100%; padding: 14px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 0.95rem; color: var(--text-main); resize: vertical; line-height: 1.5; transition: border-color 0.2s, box-shadow 0.2s; }
+        #in-oracle-journal:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px var(--primary-dim); }
 
-        .inline-input-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 10px; animation: fadeInDown 0.2s ease-out forwards; }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .inline-tags { margin-top: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
-        .tag-label { color: var(--text-hint); }
-        .mini-tag { background: transparent; border: 1px solid var(--border); color: var(--text-dim); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; transition: all 0.1s; }
-        .mini-tag.active { background: var(--green-dim); color: var(--green); border-color: var(--green); font-weight: bold; }
-        .inline-actions { margin-top: 10px; display: flex; gap: 8px; }
-        .inline-actions button { padding: 8px; font-size: 0.85rem; flex: 1; margin-top: 0; }
+        .inline-input-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 12px; animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .inline-tags { margin-top: 12px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .tag-label { color: var(--text-hint); font-weight: 500;}
+        .mini-tag { background: var(--bg-panel); border: 1px solid var(--border); color: var(--text-dim); padding: 4px 10px; border-radius: 16px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+        .mini-tag.active { background: var(--primary); color: white; border-color: var(--primary); font-weight: 500; }
+        .inline-actions { margin-top: 16px; display: flex; gap: 10px; }
+        .inline-actions button { padding: 10px; font-size: 0.95rem; flex: 1; margin-top: 0; }
 
-        .checkbox-row { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; margin-bottom: 15px;}
+        .checkbox-row { display: flex; flex-direction: column; gap: 10px; font-size: 0.9rem; margin-bottom: 20px;}
         .checkbox-label { 
-            display: flex; align-items: flex-start; gap: 8px; cursor: pointer;
-            padding: 6px 8px; border: 1px solid transparent; transition: background 0.2s;
-            color: var(--text-main); border-radius: 4px;
+            display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
+            padding: 10px 12px; border: 1px solid var(--border); transition: background 0.2s;
+            color: var(--text-main); border-radius: 8px; background: var(--bg-panel);
         }
         .checkbox-label:hover { background: var(--bg); }
-        .checkbox-label input[type="checkbox"] { width: auto; margin-top: 3px; flex-shrink: 0; }
-        .checkbox-text { display: flex; flex-direction: column; gap: 2px; }
-        .checkbox-title { font-weight: bold; }
-        .checkbox-desc { font-size: 0.7rem; color: var(--text-dim); font-weight: normal; }
-        .btn-toxic { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); width: 100%; padding: 12px; font-size: 0.9rem; margin-top: 10px; font-weight: bold; }
-        .btn-toxic:hover { background: var(--orange); color: white; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(255, 109, 0, 0.3); }
+        .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--primary);}
+        .checkbox-text { display: flex; flex-direction: column; gap: 4px; }
+        .checkbox-title { font-weight: 600; }
+        .checkbox-desc { font-size: 0.8rem; color: var(--text-hint); font-weight: normal; }
+        .btn-toxic { background: var(--bg-panel); color: var(--orange); border: 1px solid var(--orange); width: 100%; padding: 14px; font-size: 1rem; margin-top: 12px; font-weight: 600; }
+        .btn-toxic:hover { background: var(--orange); color: white; }
 
         /* ===== Plus Button (Calendar corner) ===== */
-        .btn-add-xp { display: inline-block; margin-left: 8px; width: 18px; height: 18px; line-height: 16px; text-align: center; border-radius: 50%; background: var(--green-dim); color: var(--green); font-weight: bold; cursor: pointer; font-size: 14px; border: 1px solid var(--green); transition: all 0.2s; vertical-align: middle;}
-        .btn-add-xp:hover { background: var(--green); color: white; transform: scale(1.1); }
+        .btn-add-xp { display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--primary-dim); color: var(--primary); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s; vertical-align: middle;}
+        .btn-add-xp:hover { background: var(--primary); color: white; transform: scale(1.1); }
         
         .btn-cal-add {
-            width: 28px; height: 28px; line-height: 26px; text-align: center;
-            border-radius: 50%; background: var(--green-dim); color: var(--green);
-            font-weight: bold; cursor: pointer; font-size: 18px; border: 1px solid var(--green);
-            transition: all 0.2s; padding: 0;
+            width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 50%; background: var(--primary); color: white;
+            font-weight: 500; cursor: pointer; font-size: 20px; border: none;
+            transition: all 0.2s; padding: 0; box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
         }
-        .btn-cal-add:hover { background: var(--green); color: white; transform: scale(1.1); }
+        .btn-cal-add:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4); }
+        .btn-cal-add:active { transform: scale(0.95); }
 
         /* ===== Record Overlay (from calendar +) ===== */
         .record-overlay {
             display: none; 
-            margin-top: 12px;
-            padding: 16px;
-            background: var(--bg);
+            margin-top: 16px;
+            padding: 20px;
+            background: var(--bg-panel);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            animation: fadeInDown 0.2s ease-out forwards;
+            border-radius: 12px;
+            animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
         .record-overlay.active { display: block; }
-        .record-mode-tabs { display: flex; gap: 0; margin-bottom: 12px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+        .record-mode-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: var(--bg); padding: 4px;}
         .record-mode-tab { 
-            flex: 1; padding: 10px; text-align: center; cursor: pointer;
-            color: var(--text-dim); font-weight: bold; font-size: 0.8rem;
-            background: var(--bg-panel); transition: all 0.2s; border: none;
+            flex: 1; padding: 8px 12px; text-align: center; cursor: pointer;
+            color: var(--text-dim); font-weight: 500; font-size: 0.9rem;
+            background: transparent; transition: all 0.2s; border: none; border-radius: 6px;
         }
-        .record-mode-tab.active { color: white; background: var(--green); }
-        .record-mode-tab:hover:not(.active) { background: var(--panel-border); }
+        .record-mode-tab.active { color: var(--text-main); background: var(--bg-panel); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .record-mode-tab:hover:not(.active) { color: var(--text-main); }
         .record-mode-panel { display: none; }
         .record-mode-panel.active { display: block; }
 
         /* ===== Monthly Calendar ===== */
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; }
-        .calendar-nav-btn { cursor: pointer; background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 4px; padding: 2px 8px; font-size: 0.7rem; }
-        .calendar-nav-btn:hover { color: var(--text-main); border-color: var(--text-hint); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 5px;}
-        .calendar-day-header { text-align: center; font-size: 0.7rem; color: var(--text-hint); padding-bottom: 4px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 600; }
+        .calendar-nav-btn { cursor: pointer; background: var(--bg); border: none; color: var(--text-main); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; transition: background 0.2s;}
+        .calendar-nav-btn:hover { background: var(--panel-border); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 12px;}
+        .calendar-day-header { text-align: center; font-size: 0.75rem; color: var(--text-hint); padding-bottom: 8px; font-weight: 500;}
         .calendar-cell { 
-            border-radius: 4px; background-color: var(--panel-border);
-            cursor: pointer; transition: all 0.2s; border: 1px solid transparent; 
+            border-radius: 8px; background-color: var(--bg);
+            cursor: pointer; transition: all 0.2s; border: 2px solid transparent; 
             display: flex; flex-direction: column; justify-content: space-between;
-            padding: 4px; font-size: 0.65rem; color: var(--text-hint);
-            min-height: 55px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            padding: 6px; font-size: 0.75rem; color: var(--text-hint);
+            min-height: 70px;
         }
-        .calendar-cell.empty { background-color: transparent; border-color: transparent; cursor: default; box-shadow: none; }
-        .calendar-cell:not(.empty):hover { border-color: var(--text-hint); }
-        .calendar-cell.active { border-color: var(--text-main); transform: scale(1.05); z-index: 2; box-shadow: 0 4px 8px rgba(0,0,0,0.3); font-weight: bold; color: var(--text-main); }
+        .calendar-cell.empty { background-color: transparent; border-color: transparent; cursor: default; }
+        .calendar-cell:not(.empty):hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .calendar-cell.active { border-color: var(--primary); transform: translateY(-2px); z-index: 2; box-shadow: 0 8px 16px rgba(0,113,227,0.15); font-weight: 600; color: var(--text-main); background: var(--bg-panel);}
         
-        .calendar-cell.level-1 { background-color: rgba(0, 191, 165, 0.15); }
-        .calendar-cell.level-2 { background-color: rgba(0, 191, 165, 0.35); }
-        .calendar-cell.level-3 { background-color: rgba(0, 191, 165, 0.6); }
-        .calendar-cell.level-4 { background-color: rgba(0, 191, 165, 0.9); }
+        .calendar-cell.level-1 { background-color: #E3F2FD; }
+        .calendar-cell.level-2 { background-color: #90CAF9; }
+        .calendar-cell.level-3 { background-color: #42A5F5; }
+        .calendar-cell.level-4 { background-color: #1E88E5; }
         .calendar-cell.level-4 .cell-date, .calendar-cell.level-4 .cell-hp { color: #fff !important; }
-        .calendar-cell.level-4 .xp-gain { color: #ccffeb; }
-        .calendar-cell.toxic { border-color: var(--orange) !important; animation: blink 2s infinite; }
+        .calendar-cell.level-4 .xp-gain { color: #fff; }
+        .calendar-cell.toxic { border: 2px solid var(--orange) !important; animation: pulse 2s infinite; }
 
-        .cell-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
-        .cell-date { font-weight: bold; color: var(--text-main); font-size: 0.75rem; }
-        .cell-hp { font-size: 0.6rem; padding: 1px 3px; border-radius: 2px; font-weight: bold; background: var(--bg); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
+
+        .cell-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .cell-date { font-weight: 600; color: var(--text-main); font-size: 0.85rem; }
+        .cell-hp { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: 600; background: var(--bg-panel); }
         .hp-high { color: var(--green); border: 1px solid var(--green); }
         .hp-mid { color: var(--text-hint); border: 1px solid var(--text-hint); }
         .hp-low { color: var(--orange); border: 1px solid var(--orange); }
 
-        .cell-xp-row { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.65rem; font-family: monospace; line-height: 1.2; margin-top: auto; }
-        .xp-gain { color: var(--green); }
+        .cell-xp-row { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.75rem; font-variant-numeric: tabular-nums; line-height: 1.3; margin-top: auto; font-weight: 500;}
+        .xp-gain { color: var(--primary); }
         .xp-loss { color: var(--orange); }
 
-        .heatmap-detail { background: var(--bg); border: 1px solid var(--panel-border); padding: 10px; border-radius: 4px; font-size: 0.8rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); margin-top: 10px;}
-        .heatmap-detail-title { font-weight: bold; margin-bottom: 8px; color: var(--text-main); border-bottom: 1px dashed var(--border); padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
+        .heatmap-detail { background: var(--bg); border: 1px solid var(--panel-border); padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-top: 16px;}
+        .heatmap-detail-title { font-weight: 600; margin-bottom: 12px; color: var(--text-main); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;}
 
         /* ===== History Items ===== */
-        .history-list { display: flex; flex-direction: column; gap: 5px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding-right: 5px; }
         .history-item { 
             display: flex; justify-content: space-between; align-items: center; 
-            font-size: 0.75rem; padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-dim);
-            background: var(--bg); border-radius: 4px; margin-bottom: 4px;
+            font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); color: var(--text-dim);
+            background: var(--bg-panel); border-radius: 8px;
         }
-        .history-item:hover { background: var(--bg-panel); border-color: var(--green); }
-        .hist-time { width: 50px; color: var(--text-hint); }
-        .hist-attr { width: 70px; font-weight: bold; color: var(--cyan); }
-        .hist-xp { width: 80px; color: var(--green); text-align: right; font-weight: bold;}
+        .history-item:hover { border-color: var(--primary); }
+        .hist-time { width: 50px; color: var(--text-hint); font-size: 0.75rem;}
+        .hist-attr { width: 70px; font-weight: 600; color: var(--text-main); }
+        .hist-xp { width: 80px; color: var(--primary); text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;}
         .hist-xp.negative { color: var(--orange); }
-        .hist-desc { flex: 1; padding: 0 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-desc { flex: 1; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .btn-revoke { 
-            font-size: 0.65rem; padding: 4px 8px; border-color: var(--border); color: var(--text-hint);
-            background: transparent; border-radius: 2px;
+            font-size: 0.75rem; padding: 6px 10px; border-color: var(--border); color: var(--text-hint);
+            background: transparent; border-radius: 6px;
         }
         .btn-revoke:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
 
         /* ===== Log Section ===== */
         #oracle-log-section { display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0; }
-        .oracle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .oracle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .oracle-header .section-title { margin: 0; border: none; padding: 0; }
         #oracle-log {
-            background: var(--bg-panel); border: 1px solid var(--border); padding: 10px;
-            height: auto; min-height: 120px; max-height: 300px; overflow-y: auto; font-size: 0.8rem; color: var(--text-dim);
-            display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; border-radius: 4px;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); flex-grow: 1;
+            background: var(--bg); border: 1px solid var(--border); padding: 16px;
+            height: auto; min-height: 150px; max-height: 350px; overflow-y: auto; font-size: 0.9rem; color: var(--text-dim);
+            display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; border-radius: 12px;
+            flex-grow: 1; font-family: var(--font-mono); line-height: 1.4;
         }
-        .log-entry.positive { color: var(--green); font-weight: bold;}
-        .log-entry.negative { color: var(--orange); font-weight: bold;}
+        .log-entry.positive { color: var(--green); font-weight: 600;}
+        .log-entry.negative { color: var(--orange); font-weight: 600;}
         .log-entry.system { color: var(--cyan); }
 
         /* ===== Settings Gear ===== */
         .btn-gear {
-            background: none; border: none; cursor: pointer; font-size: 1.2rem;
-            color: var(--text-hint); padding: 4px; transition: all 0.2s;
+            background: none; border: none; cursor: pointer; font-size: 1.4rem;
+            color: var(--text-hint); padding: 4px; transition: all 0.3s;
         }
         .btn-gear:hover { color: var(--text-main); transform: rotate(90deg); }
         .settings-dropdown {
             display: none; background: var(--bg-panel); border: 1px solid var(--border);
-            border-radius: 8px; padding: 12px; margin-top: 12px;
+            border-radius: 12px; padding: 16px; margin-top: 12px;
             animation: fadeInDown 0.2s ease-out forwards;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
         .settings-dropdown.active { display: block; }
         .settings-dropdown-item {
-            display: flex; align-items: center; gap: 10px; padding: 10px;
-            cursor: pointer; border-radius: 6px; transition: background 0.15s;
-            font-size: 0.8rem; color: var(--text-dim); font-weight: bold;
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            cursor: pointer; border-radius: 8px; transition: background 0.2s;
+            font-size: 0.9rem; color: var(--text-main); font-weight: 500;
         }
         .settings-dropdown-item:hover { background: var(--bg); }
-        .settings-dropdown-item .icon { font-size: 1rem; width: 24px; text-align: center; }
+        .settings-dropdown-item .icon { font-size: 1.2rem; width: 24px; text-align: center; color: var(--primary);}
 
-        .settings-section { border-color: var(--text-hint) !important; background: var(--bg) !important; }
-        .settings-grid { display: grid; gap: 10px; margin-bottom: 12px; }
-        .settings-field label { display: block; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px; }
+        .settings-section { background: var(--bg) !important; padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border);}
+        .settings-grid { display: grid; gap: 12px; margin-bottom: 16px; }
+        .settings-field label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500;}
 
         /* ===== Tooltip (Global Toast) ===== */
         .tip { cursor: help; }
         #global-toast {
             position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
-            background: rgba(33, 37, 41, 0.95); color: #fff;
-            padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;
-            max-width: 90vw; width: max-content; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-            z-index: 9999; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: rgba(0, 0, 0, 0.8); color: #fff;
+            padding: 12px 20px; border-radius: 12px; font-size: 0.9rem;
+            max-width: 90vw; width: max-content; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 9999; opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none; text-align: left; line-height: 1.5;
-            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-weight: 500;
         }
-        #global-toast.show { bottom: 24px; opacity: 1; }
+        #global-toast.show { bottom: 32px; opacity: 1; }
 
         /* ===== Confirm Overlay ===== */
         .confirm-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(32,33,36,0.6); backdrop-filter: blur(2px); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center;
         }
         .confirm-overlay.active { display: flex; }
-        .confirm-box { border: 1px solid var(--orange); background: var(--bg-panel); padding: 20px; max-width: 400px; width: 90%; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
-        .confirm-box p { margin-bottom: 15px; font-size: 0.9rem; line-height: 1.5; color: var(--text-main); }
-        .confirm-actions { display: flex; gap: 10px; }
-        .confirm-actions button { flex: 1; }
+        .confirm-box { border: none; background: var(--bg-panel); padding: 32px; max-width: 400px; width: 90%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);}
+        .confirm-box p { margin-bottom: 24px; font-size: 1rem; line-height: 1.6; color: var(--text-main); font-weight: 500;}
+        .confirm-actions { display: flex; gap: 12px; }
+        .confirm-actions button { flex: 1; padding: 12px; font-size: 1rem;}
 
-        @keyframes blink { 50% { opacity: 0.3; } }
+        @keyframes blink { 50% { opacity: 0.4; } }
 
         /* 新的校准问卷样式 */
-        .calib-step { display: none; animation: fadeInRight 0.3s ease-out forwards; }
+        .calib-step { display: none; animation: fadeInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .calib-step.active { display: block; }
-        @keyframes fadeInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         
-        .calib-progress-bar { display: flex; gap: 4px; margin-bottom: 20px; }
-        .calib-progress-segment { flex: 1; height: 4px; background: var(--panel-border); border-radius: 2px; transition: background 0.3s; }
-        .calib-progress-segment.active { background: var(--green); }
-        .calib-progress-segment.completed { background: rgba(0, 191, 165, 0.5); }
+        .calib-progress-bar { display: flex; gap: 8px; margin-bottom: 30px; }
+        .calib-progress-segment { flex: 1; height: 6px; background: var(--panel-border); border-radius: 3px; transition: background 0.4s; }
+        .calib-progress-segment.active { background: var(--primary); }
+        .calib-progress-segment.completed { background: rgba(0, 113, 227, 0.4); }
         
-        .calib-nav { display: flex; justify-content: space-between; margin-top: 30px; gap: 10px; }
-        .calib-nav button { flex: 1; padding: 12px; font-size: 1rem; }
+        .calib-nav { display: flex; justify-content: space-between; margin-top: 40px; gap: 16px; }
+        .calib-nav button { flex: 1; padding: 14px; font-size: 1.05rem; border-radius: 12px;}
         
-        .question-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-        .question-title { font-weight: bold; color: var(--text-main); margin-bottom: 10px; font-size: 0.95rem; }
-        .question-desc { font-size: 0.75rem; color: var(--text-hint); margin-bottom: 12px; }
+        .question-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .question-title { font-weight: 600; color: var(--text-main); margin-bottom: 12px; font-size: 1.05rem; }
+        .question-desc { font-size: 0.85rem; color: var(--text-hint); margin-bottom: 16px; line-height: 1.5; }
         
-        .option-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
+        .option-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
         .option-grid.col-2 { grid-template-columns: 1fr 1fr; }
         .option-card { 
-            background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; 
-            padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s;
-            font-size: 0.85rem; color: var(--text-dim);
+            background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; 
+            padding: 14px; text-align: center; cursor: pointer; transition: all 0.2s;
+            font-size: 0.95rem; color: var(--text-dim); font-weight: 500;
         }
-        .option-card:hover { border-color: var(--green); }
-        .option-card.selected { background: var(--green-dim); border-color: var(--green); color: var(--green); font-weight: bold; }
+        .option-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
+        .option-card.selected { background: var(--primary-dim); border-color: var(--primary); color: var(--primary); font-weight: 600; box-shadow: 0 2px 8px rgba(0, 113, 227, 0.15);}
 
     </style>
 </head>
@@ -412,7 +426,7 @@
 
             <!-- STEP 0: 基础信息 -->
             <div class="calib-step active" id="step-0">
-                <div class="calib-intro">欢迎接入义体计划。我们需要进行一次深度的生物学基线扫描，来准确映射你的初始属性(STR/CON/FOC/WIL)。</div>
+                <div class="calib-intro">欢迎接入个人成长系统。我们需要进行一次深度的初始问卷，来准确映射你的初始属性(STR/CON/FOC/WIL)。</div>
                 
                 <div class="question-card">
                     <div class="question-title">基础生理参数</div>
@@ -704,6 +718,16 @@
         </div>
     </div>
 
+    <!-- ===== SECTION 2.5: ANALYTICS (CHARTS) ===== -->
+    <div class="card" id="card-analytics">
+        <div class="section">
+            <div class="section-title">数据分析趋势 <span style="font-size:0.75rem; color:var(--text-hint); font-weight:normal;">近30天</span></div>
+            <div style="position: relative; height: 200px; width: 100%;">
+                <canvas id="analytics-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== SECTION 3: COMBINED LOGS + SETTINGS ===== -->
     <div class="card" id="card-logs">
         <div class="section" id="oracle-log-section">
@@ -712,7 +736,7 @@
                 <button class="btn-gear" id="btn-gear" onclick="toggleSettingsDropdown()" title="设置">⚙️</button>
             </div>
             <div id="oracle-log">
-                <div>> SYS_INIT COMPLETE. ENGINE V5 ONLINE.</div>
+                <div>> 系统初始化完成。V6 版本已就绪。</div>
             </div>
 
             <!-- Settings Dropdown -->
@@ -729,13 +753,13 @@
                     <span class="icon">🤖</span> AI 配置
                 </div>
                 <div class="settings-dropdown-item" id="btn-reset" style="color: var(--orange);">
-                    <span class="icon">🔄</span> 重置引擎
+                    <span class="icon">🔄</span> 重置系统
                 </div>
             </div>
 
             <!-- AI Settings (hidden by default) -->
             <div class="settings-section" id="settings-section" style="display: none; margin-top: 16px; padding: 16px; border: 1px dashed var(--border); border-radius: 8px;">
-                <div class="section-desc">配置 AI 引擎连接。系统默认使用 DeepSeek。密钥仅保存在本地。</div>
+                <div class="section-desc">配置 AI 助手连接。系统默认使用 DeepSeek。密钥仅保存在本地。</div>
                 <div class="settings-grid">
                     <div class="settings-field">
                         <label>API ENDPOINT</label>
@@ -758,7 +782,7 @@
 
 <script>
 /**
- * PROJECT_FLESH — ENGINE V5.1
+ * Life Tracker — ENGINE V5.1
  * Incorporating Habit Calibration & Willpower Friction Concept
  */
 
@@ -1060,9 +1084,9 @@ function commitCalibration() {
 
     saveData();
     document.getElementById('calib-overlay').style.display = 'none';
-    addActionLog('SYSTEM', ['SYS'], 0, '生物学基线扫描完成。初始属性已校准。');
+    addActionLog('SYSTEM', ['SYS'], 0, '初始问卷完成。初始属性已校准。');
     bootUI();
-    showConfirm('基线校准完成', `根据你的生理参数、活动习惯与生活状态，系统已完成深度校准。<br><br>你的初始属性为：<br>STR: ${results.strLvl} | CON: ${results.conLvl}<br>FOC: ${results.focLvl} | WIL: ${results.wilLvl}<br><br>开始你的肉体飞升之旅吧。`, () => { document.getElementById('confirm-overlay').classList.remove('active'); });
+    showConfirm('基线校准完成', `根据你的生理参数、活动习惯与生活状态，系统已完成深度校准。<br><br>你的初始属性为：<br>STR: ${results.strLvl} | CON: ${results.conLvl}<br>FOC: ${results.focLvl} | WIL: ${results.wilLvl}<br><br>开始你的自我提升之旅吧。`, () => { document.getElementById('confirm-overlay').classList.remove('active'); });
 }
 
 function getBaseXpForLevel(level) {
@@ -1103,7 +1127,7 @@ function toggleSettingsDropdown() {
     dropdown.classList.toggle('active');
 }
 
-// ===== 引擎初始化 =====
+// ===== 系统初始化 =====
 async function initEngine() {
     loadData();
     
@@ -1120,6 +1144,7 @@ function bootUI() {
     renderHeatmap();
     renderRadar();
     renderVitalsUI();
+    if (typeof renderAnalyticsChart === 'function') renderAnalyticsChart();
     setupEventListeners();
 }
 
@@ -1137,6 +1162,7 @@ function saveData() {
         localStorage.setItem(STORAGE_KEY, encoded);
     } catch(e) { logOracle('ERR: 保存失败', 'negative'); }
     renderRadar();
+    if (typeof renderAnalyticsChart === 'function') renderAnalyticsChart();
 }
 
 function loadData() {
@@ -1166,10 +1192,19 @@ function loadData() {
 // ===== Calibration UI 逻辑 =====
 
 
-// ===== 衰减：突触固化定律 =====
+// ===== 衰减：习惯保持与精英维持税 =====
 function getActualDecayRate(attr, level) {
     const base = ATTR_CONFIG[attr].base_decay;
-    return base / Math.sqrt(level);
+    // 逻辑斯蒂/阶梯混合曲线：保护普通人，严惩精英
+    let multiplier = 0.5; // LV 1-10 很容易维持
+    if (level > 15) {
+        // LV 16+ 精英级：指数级维持税 (最高可达 3-4倍基准衰减)
+        multiplier = 1.5 + Math.pow(level - 15, 1.2) * 0.3; 
+    } else if (level > 10) {
+        // LV 11-15 进阶级：线性过渡到 1.5倍
+        multiplier = 0.5 + ((level - 10) / 5) * 1.0;
+    }
+    return base * multiplier;
 }
 
 function calculateDecay() {
@@ -1308,7 +1343,7 @@ function commitToxic() {
         DB.attributes.FOC.total_xp = Math.max(0, DB.attributes.FOC.total_xp - penalty);
         const actionTime = window.selectedHeatmapDate || Date.now();
         addActionLog('TOXIC', ['FOC'], -penalty, '违规行为惩罚', actionTime);
-        logOracle(`CRITICAL: 谷氨酸毒性。FOC -${penalty} XP`, 'negative');
+        logOracle(`CRITICAL: 违规记录。FOC -${penalty} XP`, 'negative');
         window.openInlinePanel = null;
         saveData(); renderHeatmap(); renderRadar();
     });
@@ -1825,11 +1860,11 @@ async function callOracleAuto() {
     if (!text) text = "没有新的日志录入。请单纯基于我的历史数据给出一句锐评或建议。";
     
     const { api_url, api_key, model_id } = DB.settings;
-    if (!api_key) { logOracle('SYS: AI 引擎未配置。请在配置区填入 API Key。', 'negative'); return; }
+    if (!api_key) { logOracle('SYS: AI 助手未配置。请在配置区填入 API Key。', 'negative'); return; }
 
     const btn = document.getElementById('btn-oracle-auto');
     btn.disabled = true;
-    logOracle('> AI 引擎连接中...', 'system');
+    logOracle('> AI 助手连接中...', 'system');
 
     const now = Date.now();
     const d7 = now - 7 * 86400000;
@@ -1843,7 +1878,7 @@ async function callOracleAuto() {
     const avgHp = hpCount > 0 ? Math.round(hpSum/hpCount) : DB.current_hp;
     const ctx = `7D:STR+${Math.round(xp7d.STR)} CON+${Math.round(xp7d.CON)} FOC+${Math.round(xp7d.FOC)} WIL+${Math.round(xp7d.WIL)} HP:${avgHp}`;
 
-    const prompt = `你是RPG引擎AI。提取用户日志中的体征与行为。按严格JSON输出：
+    const prompt = `你是个人成长助理。提取用户日志中的体征与行为。按严格JSON输出：
 {"eval":"简洁健康点评(<50字),结合历史:${ctx}","actions":[{"type":"VITALS","th":总时,"tm":分,"dh":深睡时,"dm":深睡分,"rh":REM时,"rm":REM分,"hrv":数值,"rhr":数值},{"type":"XP","attrs":["STR"|"CON"|"FOC"|"WIL"],"duration":时长,"intensity":乘数(0.8-3.0),"desc":"简述"}]}
 缺失数据用0。用户日志：${text}`;
 
@@ -1949,6 +1984,119 @@ async function callOracleAuto() {
     } finally { btn.disabled = false; }
 }
 
+let analyticsChartInstance = null;
+function renderAnalyticsChart() {
+    const ctx = document.getElementById('analytics-chart');
+    if (!ctx) return;
+    
+    if (!DB || !DB.profile) return; // 初始化前不渲染
+
+    // Process last 30 days data
+    const msPerDay = 86400000;
+    const now = Date.now();
+    const d30 = now - 30 * msPerDay;
+    
+    // 获取校准时间
+    const calibratedAt = DB.profile.calibratedAt || now;
+    const startOfDayCalibrated = getMidnight(new Date(calibratedAt));
+    
+    // Group logs by day
+    const dailyData = {};
+    const labelsData = [];
+    for(let i=29; i>=0; i--) {
+        const dTimestamp = now - i * msPerDay;
+        const d = new Date(dTimestamp);
+        const dStr = `${d.getMonth()+1}/${d.getDate()}`;
+        const dMidnight = getMidnight(d);
+        
+        labelsData.push({ str: dStr, mid: dMidnight });
+        
+        // 未开始记录的日期，数据完全置空
+        if (dMidnight < startOfDayCalibrated) {
+            dailyData[dStr] = { hp: null, str: null, con: null, foc: null, wil: null };
+        } else {
+            dailyData[dStr] = { hp: null, str: 0, con: 0, foc: 0, wil: 0 };
+        }
+    }
+    
+    DB.action_log.forEach(log => {
+        if(log.t < d30 || log.revoked) return;
+        const d = new Date(log.t);
+        const dStr = `${d.getMonth()+1}/${d.getDate()}`;
+        if(!dailyData[dStr]) return;
+        
+        if (log.type === 'VITALS') {
+            dailyData[dStr].hp = log.hp;
+        } else if (log.type === 'XP' || log.type === 'COMMIT') {
+            log.attrs.forEach(a => {
+                const k = a.toLowerCase();
+                if(dailyData[dStr][k] !== undefined) {
+                    if (dailyData[dStr][k] === null) dailyData[dStr][k] = 0;
+                    dailyData[dStr][k] += Math.max(0, log.xp);
+                }
+            });
+        }
+    });
+    
+    const hpData = [];
+    const strData = [];
+    const conData = [];
+    const focData = [];
+    const wilData = [];
+
+    let lastHp = null;
+    labelsData.forEach(l => {
+        const data = dailyData[l.str];
+        
+        // HP 处理：仅在建档后继承上一次的HP，未建档前不显示
+        if (data.hp === null) {
+            if (l.mid >= startOfDayCalibrated) {
+                hpData.push(lastHp !== null ? lastHp : 100);
+            } else {
+                hpData.push(null);
+            }
+        } else {
+            hpData.push(data.hp);
+            lastHp = data.hp;
+        }
+        
+        strData.push(data.str);
+        conData.push(data.con);
+        focData.push(data.foc);
+        wilData.push(data.wil);
+    });
+
+    if (analyticsChartInstance) {
+        analyticsChartInstance.destroy();
+    }
+    
+    const ChartObj = window.Chart;
+    if (!ChartObj) return;
+
+    analyticsChartInstance = new ChartObj(ctx, {
+        type: 'line',
+        data: {
+            labels: labelsData.map(l => l.str),
+            datasets: [
+                { label: 'HP', data: hpData, borderColor: '#34C759', backgroundColor: 'rgba(52, 199, 89, 0.1)', yAxisID: 'y', tension: 0.3, fill: true, pointRadius: 0, spanGaps: false },
+                { label: 'STR+CON (XP)', data: strData.map((v,i) => v === null ? null : v+conData[i]), borderColor: '#FF3B30', yAxisID: 'y1', tension: 0.3, borderDash: [5, 5], pointRadius: 2, spanGaps: false },
+                { label: 'FOC+WIL (XP)', data: focData.map((v,i) => v === null ? null : v+wilData[i]), borderColor: '#0071E3', yAxisID: 'y1', tension: 0.3, borderDash: [5, 5], pointRadius: 2, spanGaps: false }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } },
+            scales: {
+                x: { ticks: { maxTicksLimit: 7, font: { size: 9 } }, grid: { display: false } },
+                y: { type: 'linear', display: true, position: 'left', title: { display: false }, min: 0, max: 150, ticks: {font: {size: 9}} },
+                y1: { type: 'linear', display: true, position: 'right', title: { display: false }, grid: { drawOnChartArea: false }, ticks: {font: {size: 9}} }
+            }
+        }
+    });
+}
+
 // ===== 杂项与事件 =====
 function getMidnight(date) { return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime(); }
 
@@ -1963,23 +2111,29 @@ function showConfirm(msg, onYes) {
 
 const INTENSITY_PRESETS = {
     DEFAULT: [
-        { val: 0.8, text: "浅度负荷 (低压/日常) [x0.8]" },
-        { val: 1.0, text: "常态负荷 (标准) [x1.0]", default: true },
-        { val: 2.0, text: "极限负荷 (力竭/冲刺) [x2.0]" }
+        { val: 0.5, text: "RPE 1-3 (极轻松/恢复)" },
+        { val: 0.8, text: "RPE 4-6 (轻松/日常)" },
+        { val: 1.0, text: "RPE 7 (吃力但可控)", default: true },
+        { val: 1.5, text: "RPE 8-9 (接近极限)" },
+        { val: 2.5, text: "RPE 10 (绝对力竭/极限)" }
     ],
     WIL: [
-        { val: 10.0, text: "按次: 抵抗诱惑/克制冲动 [10 XP/次]" },
-        { val: 1.5, text: "按分: 忍耐枯燥/持续艰难 [1.5 XP/分]", default: true },
-        { val: 15.0, text: "按分: 剧烈生理不适(如冰浴) [15 XP/分]" }
+        { val: 5.0, text: "按次: 顺手抵抗了小诱惑 [5 XP]" },
+        { val: 15.0, text: "按次: 克服极大的冲动 [15 XP]", default: true },
+        { val: 1.0, text: "按分: 忍耐一般枯燥 [1 XP/分]" },
+        { val: 3.0, text: "按分: 剧烈生理/心理抗拒 [3 XP/分]" }
     ],
     FOC: [
-        { val: 0.8, text: "浅度工作 (处理杂项/邮件) [x0.8]" },
-        { val: 1.2, text: "深度心流 (无打扰工作/阅读) [x1.2]", default: true }
+        { val: 0.5, text: "浅度 (处理杂项/分心) [x0.5]" },
+        { val: 1.0, text: "标准 (正常工作/阅读) [x1.0]", default: true },
+        { val: 1.5, text: "深度心流 (忘我/高难度) [x1.5]" }
     ],
     STR_CON: [
-        { val: 0.8, text: "轻度恢复 (散步/拉伸) [x0.8]" },
-        { val: 1.0, text: "标准训练 (正常阻力/心率) [x1.0]", default: true },
-        { val: 2.0, text: "极限力竭 (冲刺/大重量极限) [x2.0]" }
+        { val: 0.5, text: "RPE 1-3 (散步/拉伸恢复)" },
+        { val: 0.8, text: "RPE 4-6 (微喘/出汗)" },
+        { val: 1.0, text: "RPE 7 (常规正式组)", default: true },
+        { val: 1.5, text: "RPE 8-9 (接近力竭/冲刺)" },
+        { val: 2.5, text: "RPE 10 (完全力竭/极限)" }
     ]
 };
 
@@ -2060,11 +2214,11 @@ function setupEventListeners() {
             document.querySelectorAll('input[type="number"], textarea').forEach(el => el.value = '');
             document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
             // 清空系统日志
-            document.getElementById('oracle-log').innerHTML = '<div>> SYS_INIT COMPLETE. ENGINE V5 ONLINE.</div>';
+            document.getElementById('oracle-log').innerHTML = '<div>> 系统初始化完成。V6 版本已就绪。</div>';
 
             DB = createFreshDB(); 
             saveData(); 
-            showCalibration();
+            location.reload(); // 直接刷新页面可以最干净地重置问卷状态和全局变量
         });
     });
 }
@@ -2109,7 +2263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
 });
 
-// 引擎点火
+// 系统启动
 window.onload = initEngine;
 </script>
 </body>
