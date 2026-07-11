@@ -264,6 +264,9 @@
         .calendar-cell.level-4 { background-color: #1E88E5; }
         .calendar-cell.level-4 .cell-date, .calendar-cell.level-4 .cell-hp { color: #fff !important; }
         .calendar-cell.level-4 .xp-gain { color: #fff; }
+        .calendar-cell.today { border: 2px solid var(--green); }
+        .calendar-cell.today .cell-date { color: var(--green); font-weight: 800; }
+        .calendar-cell.today.active { border: 2px solid var(--green); box-shadow: 0 8px 16px rgba(52,199,89,0.15); }
         .calendar-cell.toxic { border: 2px solid var(--orange) !important; animation: pulse 2s infinite; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
@@ -285,21 +288,22 @@
         /* ===== History Items ===== */
         .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding-right: 5px; }
         .history-item { 
-            display: flex; justify-content: space-between; align-items: center; 
+            display: flex; flex-direction: column; gap: 6px;
             font-size: 0.85rem; padding: 12px; border: 1px solid var(--border); color: var(--text-dim);
             background: var(--bg-panel); border-radius: 8px;
         }
         .history-item:hover { border-color: var(--primary); }
+        .hist-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         .hist-time { width: 50px; color: var(--text-hint); font-size: 0.75rem;}
         .hist-attr { width: 70px; font-weight: 600; color: var(--text-main); }
-        .hist-xp { width: 80px; color: var(--primary); text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;}
+        .hist-xp { flex: 1; color: var(--primary); text-align: left; padding-left: 8px; font-weight: 600; font-variant-numeric: tabular-nums;}
         .hist-xp.negative { color: var(--orange); }
-        .hist-desc { flex: 1; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hist-desc { padding: 0; word-break: break-all; color: var(--text-main); line-height: 1.4; }
         .btn-revoke { 
-            font-size: 0.75rem; padding: 6px 10px; border-color: var(--border); color: var(--text-hint);
-            background: transparent; border-radius: 6px;
+            font-size: 0.7rem; padding: 4px 8px; border: none; color: var(--text-hint);
+            background: var(--bg); border-radius: 6px; cursor: pointer;
         }
-        .btn-revoke:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-dim); }
+        .btn-revoke:hover { background: var(--orange-dim); color: var(--orange); }
 
         /* ===== Log Section ===== */
         #oracle-log-section { display: flex; flex-direction: column; flex-grow: 1; margin-bottom: 0; }
@@ -1322,6 +1326,11 @@ function syncVitals() {
         t: actionTime
     });
 
+    ['slp-t-h', 'slp-t-m', 'slp-d-h', 'slp-d-m', 'slp-r-h', 'slp-r-m', 'in-hrv', 'in-rhr'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = '';
+    });
+
     saveData(); renderVitalsUI(); renderHeatmap();
     logOracle(`> HP: ${DB.current_hp}% | BUFF: x${DB.current_buff.toFixed(1)}`);
 }
@@ -1737,6 +1746,7 @@ function renderHeatmap() {
         
         if (levelClass) cell.classList.add(levelClass);
         if (hasToxic) cell.classList.add('toxic');
+        if (dMid === todayMid) cell.classList.add('today');
         if (selectedDateMs === dMid) cell.classList.add('active');
         
         const dateStr = `${month+1}/${day}`;
@@ -1793,12 +1803,14 @@ function renderHeatmapDetail(dMid, logs, dateStr, isToday) {
         }
 
         list.insertAdjacentHTML('beforeend', `
-            <div class="history-item" style="background: transparent; padding: 4px 0; border-bottom: 1px dashed var(--border);">
-                <span class="hist-time" style="width: 50px;">${timeStr}</span>
-                <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
-                <span class="${xpClass}">${xpStr}</span>
-                <span class="hist-desc" title="${entry.desc}">${entry.desc}</span>
-                ${btnHtml}
+            <div class="history-item" style="background: transparent; padding: 8px 0; border-bottom: 1px dashed var(--border); border-radius: 0;">
+                <div class="hist-top">
+                    <span class="hist-time">${timeStr}</span>
+                    <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
+                    <span class="${xpClass}">${xpStr}</span>
+                    ${btnHtml}
+                </div>
+                <div class="hist-desc">${entry.desc}</div>
             </div>
         `);
     });
@@ -1831,11 +1843,13 @@ function renderHistory() {
 
         list.insertAdjacentHTML('beforeend', `
             <div class="history-item">
-                <span class="hist-time">${timeStr}</span>
-                <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
-                <span class="${xpClass}">${xpStr}</span>
-                <span class="hist-desc" title="${entry.desc}">${entry.desc}</span>
-                ${btnHtml}
+                <div class="hist-top">
+                    <span class="hist-time">${timeStr}</span>
+                    <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
+                    <span class="${xpClass}">${xpStr}</span>
+                    ${btnHtml}
+                </div>
+                <div class="hist-desc">${entry.desc}</div>
             </div>
         `);
     });
