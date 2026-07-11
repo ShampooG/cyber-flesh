@@ -322,6 +322,17 @@
         .heatmap-detail { background: var(--bg); border: 1px solid var(--panel-border); padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-top: 16px;}
         .heatmap-detail-title { font-weight: 600; margin-bottom: 12px; color: var(--text-main); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;}
 
+                .log-tab {
+            flex: 1; padding: 14px; text-align: center; cursor: pointer;
+            color: var(--text-dim); font-weight: 500; font-size: 0.95rem;
+            background: transparent; border: none; border-bottom: 2px solid transparent; border-radius: 0;
+            transition: all 0.2s; outline: none;
+        }
+        .log-tab.active {
+            color: var(--primary); border-bottom-color: var(--primary); font-weight: 600;
+        }
+        .log-tab:hover:not(.active) { color: var(--text-main); }
+
         /* ===== History Items ===== */
         .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding-right: 5px; }
         .history-item { 
@@ -743,8 +754,7 @@
                 </div>
             </div>
             
-            <!-- Heatmap Detail -->
-            <div class="heatmap-detail" id="heatmap-detail" style="display: block; border-color: var(--border);"></div>
+            
 
 
         </section>
@@ -820,7 +830,18 @@
 
         <!-- ===== SECTION 3: LOGS (Moved to Stats) ===== -->
         <div class="card" id="card-logs">
-            <section class="section" id="oracle-log-section">
+            <div style="display: flex; border-bottom: 1px solid var(--panel-border);">
+                <button class="log-tab active" id="tab-action-log" onclick="switchLogTab('action')">行为日志</button>
+                <button class="log-tab" id="tab-system-log" onclick="switchLogTab('system')">系统日志</button>
+            </div>
+            
+            <section class="section" id="action-log-section" style="display: block; padding-top: 16px;">
+                <div class="heatmap-detail" id="heatmap-detail" style="display: block; border: none; margin: 0; padding: 0;">
+                    <!-- Action logs will be rendered here -->
+                </div>
+            </section>
+
+            <section class="section" id="oracle-log-section" style="display: none; padding-top: 16px;">
                 <div class="oracle-header">
                     <div class="section-title" style="margin-bottom: 0;">系统日志 (System Logs)</div>
                 </div>
@@ -1277,6 +1298,20 @@ function calcLevelObj(total_xp) {
 
 
 // ===== UI 切换函数 =====
+window.switchLogTab = function(type) {
+    if (type === 'action') {
+        document.getElementById('action-log-section').style.display = 'block';
+        document.getElementById('oracle-log-section').style.display = 'none';
+        document.getElementById('tab-action-log').classList.add('active');
+        document.getElementById('tab-system-log').classList.remove('active');
+    } else {
+        document.getElementById('action-log-section').style.display = 'none';
+        document.getElementById('oracle-log-section').style.display = 'block';
+        document.getElementById('tab-action-log').classList.remove('active');
+        document.getElementById('tab-system-log').classList.add('active');
+    }
+};
+
 function switchTab(tabId, el) {
     // 1. 更新底部导航栏状态
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -1984,9 +2019,20 @@ function renderVitalsUI() {
     const statusContainer = document.getElementById('ui-hp-status');
     statusContainer.innerHTML = '';
 
-    if (DB.current_hp === 0 && (DB.vitals_ema.hrv_ema === null || DB.vitals_ema.hrv_ema === undefined)) {
-        hpEl.innerText = '--%'; statusContainer.style.display = 'none'; return;
+    const todayMid = getMidnight(new Date());
+    const hasTodayVitals = DB.action_log.some(l => l.type === 'VITALS' && getMidnight(new Date(l.t)) === todayMid && !l.revoked);
+
+    if (!hasTodayVitals) {
+        hpEl.innerText = '--%'; 
+        statusContainer.style.display = 'none'; 
+        if (hpFill) {
+            hpFill.style.width = '0%';
+            hpFill.style.backgroundColor = 'var(--panel-border)';
+            hpFill.style.boxShadow = 'none';
+        }
+        return;
     }
+
     hpEl.innerText = `${DB.current_hp}%`;
     if (hpFill) {
         hpFill.style.width = Math.max(0, Math.min(100, DB.current_hp)) + '%';
@@ -2285,7 +2331,7 @@ function renderHeatmap() {
             cell.classList.add('future');
             cell.disabled = true;
         } else {
-            cell.onclick = () => {
+                        cell.onclick = () => {
                 window.selectedHeatmapDate = dMid;
                 renderHeatmap(); 
             };
