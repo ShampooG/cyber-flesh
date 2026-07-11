@@ -399,6 +399,39 @@
         .option-card:hover { border-color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
         .option-card.selected { background: var(--primary-dim); border-color: var(--primary); color: var(--primary); font-weight: 600; box-shadow: 0 2px 8px rgba(0, 113, 227, 0.15);}
 
+        /* ===== Bottom Navigation & Pages ===== */
+        body { padding-bottom: 80px; }
+        
+        .page-view {
+            display: none;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .page-view.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 65px; background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid var(--panel-border);
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 1000; padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.03);
+        }
+        
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-hint); text-decoration: none;
+            font-size: 0.7rem; font-weight: 600; gap: 4px; cursor: pointer; transition: all 0.2s; height: 100%;
+        }
+        .nav-item .icon { font-size: 1.4rem; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active .icon { transform: scale(1.15); }
+        .nav-item:hover:not(.active) { color: var(--text-main); }
     </style>
 </head>
 <body>
@@ -607,8 +640,10 @@
             </div>
         </div>
     </div>
-    <!-- ===== SECTION 1: CALENDAR + VITALS + RECORD ===== -->
-    <div class="card" id="card-calendar">
+    <!-- ===== PAGES CONTAINER ===== -->
+    <div id="page-home" class="page-view active">
+        <!-- ===== SECTION 1: CALENDAR + VITALS + RECORD ===== -->
+        <div class="card" id="card-calendar">
         <div class="section">
             <!-- HP Status (compact) -->
             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
@@ -746,9 +781,12 @@
         </div>
     </div>
 
-    <!-- ===== SECTION 2.5: ANALYTICS (CHARTS) ===== -->
-    <div class="card" id="card-analytics">
-        <div class="section">
+    </div> <!-- END page-home -->
+
+    <div id="page-stats" class="page-view">
+        <!-- ===== SECTION 2.5: ANALYTICS (CHARTS) ===== -->
+        <div class="card" id="card-analytics">
+            <div class="section">
             <div class="section-title">数据分析趋势 <span style="font-size:0.75rem; color:var(--text-hint); font-weight:normal;">近30天</span></div>
             <div style="position: relative; height: 200px; width: 100%;">
                 <canvas id="analytics-chart"></canvas>
@@ -756,9 +794,12 @@
         </div>
     </div>
 
-    <!-- ===== SECTION 3: COMBINED LOGS + SETTINGS ===== -->
-    <div class="card" id="card-logs">
-        <div class="section" id="oracle-log-section">
+    </div> <!-- END page-stats -->
+
+    <div id="page-mine" class="page-view">
+        <!-- ===== SECTION 3: COMBINED LOGS + SETTINGS ===== -->
+        <div class="card" id="card-logs">
+            <div class="section" id="oracle-log-section">
             <div class="oracle-header">
                 <div class="section-title" style="margin-bottom: 0;">日志</div>
                 <button class="btn-gear" id="btn-gear" onclick="toggleSettingsDropdown()" title="设置">⚙️</button>
@@ -807,6 +848,23 @@
         </div>
     </div>
 
+    </div> <!-- END page-mine -->
+
+    <!-- ===== BOTTOM NAVIGATION ===== -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('page-home', this)">
+            <span class="icon">🏠</span>
+            <span>首页</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('page-stats', this)">
+            <span class="icon">📈</span>
+            <span>统计</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('page-mine', this)">
+            <span class="icon">⚙️</span>
+            <span>我的</span>
+        </div>
+    </nav>
 
 <script>
 /**
@@ -1135,6 +1193,29 @@ function calcLevelObj(total_xp) {
 
 
 // ===== UI 切换函数 =====
+function switchTab(tabId, el) {
+    // 1. 更新底部导航栏状态
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    if(el) {
+        el.classList.add('active');
+    }
+
+    // 2. 切换页面视图
+    document.querySelectorAll('.page-view').forEach(page => page.classList.remove('active'));
+    const targetPage = document.getElementById(tabId);
+    if(targetPage) {
+        targetPage.classList.add('active');
+    }
+
+    // 3. 特殊处理：如果是统计页面，可能需要 resize 图表以防止宽度为0
+    if (tabId === 'page-stats' && window.myLineChart) {
+        // 等待下一帧让 DOM 渲染完成
+        requestAnimationFrame(() => {
+            window.myLineChart.resize();
+        });
+    }
+}
+
 function toggleRecordOverlay() {
     const overlay = document.getElementById('record-overlay');
     overlay.classList.toggle('active');
