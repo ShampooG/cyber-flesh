@@ -155,6 +155,7 @@
         .status-buff { color: #155724; background-color: #d4edda; }
         .status-warn { color: #856404; background-color: #fff3cd; }
         .status-danger { color: #721c24; background-color: #f8d7da; }
+        .status-neutral { color: var(--text-dim); background-color: var(--bg-panel); border: 1px solid var(--border); }
 
         /* ===== Attributes ===== */
         .attr-row { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--panel-border); }
@@ -218,18 +219,41 @@
         .btn-cal-add:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4); }
         .btn-cal-add:active { transform: scale(0.95); }
 
-        /* ===== Record Overlay (from calendar +) ===== */
+        /* ===== Record Modal Overlay ===== */
         .record-overlay {
-            display: none; 
-            margin-top: 16px;
-            padding: 20px;
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            z-index: 3000; display: none; align-items: center; justify-content: center;
+            padding: 16px; opacity: 0; transition: opacity 0.3s;
         }
-        .record-overlay.active { display: block; }
+        .record-overlay.active { display: flex; opacity: 1; }
+        .record-modal-content {
+            background: var(--bg-panel); width: 100%; max-width: 500px;
+            border-radius: 16px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            max-height: 90vh; overflow-y: auto; position: relative;
+            transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .record-overlay.active .record-modal-content { transform: translateY(0); }
+        .modal-close-btn {
+            position: absolute; top: 16px; right: 16px;
+            background: var(--bg); border: none; border-radius: 50%;
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            color: var(--text-hint); cursor: pointer; font-size: 1.2rem; transition: all 0.2s;
+        }
+        .modal-close-btn:hover { background: var(--panel-border); color: var(--text-main); }
+        
+        /* ===== FAB (AI Button) ===== */
+        .fab-ai {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 56px; height: 56px;
+            background: linear-gradient(135deg, var(--cyan), #0071E3);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 24px rgba(0, 184, 212, 0.3);
+            cursor: pointer; z-index: 2000; color: white; font-size: 24px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+        }
+        .fab-ai:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 12px 32px rgba(0, 184, 212, 0.4); }
+        .fab-ai:active { transform: translateY(0) scale(0.95); }
         .record-mode-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: var(--bg); padding: 4px;}
         .record-mode-tab { 
             flex: 1; padding: 8px 12px; text-align: center; cursor: pointer;
@@ -642,19 +666,37 @@
     </div>
     <!-- ===== PAGES CONTAINER ===== -->
     <div id="page-home" class="page-view active">
+        <!-- Morning Check-in Card -->
+        <div id="morning-checkin-card" class="card" style="display: none; background: linear-gradient(135deg, var(--bg-panel), var(--bg)); border: 1px solid var(--primary); box-shadow: 0 4px 12px var(--primary-dim); animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div class="section" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-bottom: 4px;">早安！☀️</div>
+                        <div style="font-size: 0.85rem; color: var(--text-dim);">记录昨晚的睡眠与晨间心率，更新今日生命体征 (HP)。</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn-danger" style="padding: 8px 16px; font-size: 0.85rem; border: none; background: transparent; color: var(--text-hint);" onclick="dismissMorningCard()">稍后</button>
+                    <button class="btn-primary" style="padding: 8px 20px; font-size: 0.85rem; font-weight: 600;" onclick="openVitalsRecord()">立即记录</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== SECTION 1: CALENDAR + VITALS + RECORD ===== -->
         <div class="card" id="card-calendar">
         <div class="section">
             <!-- HP Status (compact) -->
-            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <div id="hp-status-area" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.2s;" onclick="openVitalsRecord()" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='none'" title="点击记录生命体征">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">HP</div>
                     <span id="ui-hp-val" style="font-size: 1.8rem; font-weight: bold;">--%</span>
-                    <div class="hp-bar-row" style="flex: 1; margin-bottom: 0;">
-                        <div class="progress-bg" style="max-width: 100%;"><div class="progress-fill" id="hp-fill" style="width: 0%; background-color: var(--green);"></div></div>
+                    <div class="hp-bar-row" style="flex: 1; margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
+                        <div class="progress-bg" style="flex: 1; max-width: 100%; margin-bottom: 0;"><div class="progress-fill" id="hp-fill" style="width: 0%; background-color: var(--green);"></div></div>
+                        <div style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(0, 255, 136, 0.1); color: var(--green); border: 1px solid rgba(0, 255, 136, 0.3); font-weight: bold; font-size: 1.1rem; padding-bottom: 1px; flex-shrink: 0;">+</div>
                     </div>
                 </div>
                 <div id="ui-hp-status" style="display:none; flex-wrap:wrap; gap:6px; margin-top:2px;"></div>
+                <div id="hp-empty-hint" style="display: none; font-size: 0.8rem; color: var(--primary); font-weight: 500; align-items: center; gap: 4px;">✨ 点击补充今日体征</div>
             </div>
 
             <!-- Calendar -->
@@ -663,7 +705,6 @@
                 <span id="cal-month-label" style="font-size: 0.8rem; color: var(--green);">YYYY - MM</span>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <button class="calendar-nav-btn" id="cal-next" onclick="changeMonth(1)">下月 ▶</button>
-                    <button class="btn-cal-add" id="btn-open-record" onclick="toggleRecordOverlay()" title="记录数据">+</button>
                 </div>
             </div>
             <div class="calendar-grid" id="calendar-grid">
@@ -694,83 +735,7 @@
             <!-- Heatmap Detail -->
             <div class="heatmap-detail" id="heatmap-detail" style="display: block; border-color: var(--border);"></div>
 
-            <!-- Record Overlay (toggled by + button) -->
-            <div class="record-overlay" id="record-overlay">
-                <div class="record-mode-tabs">
-                    <div class="record-mode-tab active" id="rtab-manual" onclick="switchRecordMode('manual')">✏️ 手动记录</div>
-                    <div class="record-mode-tab" id="rtab-ai" onclick="switchRecordMode('ai')">🤖 AI 记录</div>
-                </div>
 
-                <!-- Manual Record Panel -->
-                <div class="record-mode-panel active" id="rpanel-manual">
-                    <div class="section-subtitle" style="margin-top: 0;">/// 睡眠恢复</div>
-                    <div class="sleep-grid">
-                        <div class="hm-field">
-                            <label>总计 / Total</label>
-                            <div class="hm-inputs">
-                                <input type="number" id="slp-t-h" placeholder="0" min="0"><span>h</span>
-                                <input type="number" id="slp-t-m" placeholder="0" min="0" max="59"><span>m</span>
-                            </div>
-                        </div>
-                        <div class="hm-field">
-                            <label>深度 / Deep</label>
-                            <div class="hm-inputs">
-                                <input type="number" id="slp-d-h" placeholder="0" min="0"><span>h</span>
-                                <input type="number" id="slp-d-m" placeholder="0" min="0" max="59"><span>m</span>
-                            </div>
-                        </div>
-                        <div class="hm-field">
-                            <label>快眼 / REM</label>
-                            <div class="hm-inputs">
-                                <input type="number" id="slp-r-h" placeholder="0" min="0"><span>h</span>
-                                <input type="number" id="slp-r-m" placeholder="0" min="0" max="59"><span>m</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-subtitle">/// 自主神经 (HRV / RHR)</div>
-                    <div class="vitals-grid">
-                        <div class="vitals-input">
-                            <label>HRV <span style="font-size:0.65rem; color:var(--text-hint);">值越高越放松</span></label>
-                            <input type="number" id="in-hrv" min="1" placeholder="例如: 45">
-                        </div>
-                        <div class="vitals-input">
-                            <label>RHR <span style="font-size:0.65rem; color:var(--text-hint);">值越低越轻松</span></label>
-                            <input type="number" id="in-rhr" min="30" max="200" placeholder="例如: 65">
-                        </div>
-                    </div>
-                    <button id="btn-sync-vitals" class="btn-primary" style="width: 100%; margin-top: 5px;">[ 同步体征 ]</button>
-
-                    <hr style="border: 0; border-top: 1px dashed var(--border); margin: 15px 0;">
-                    <button id="btn-toxic" class="btn-danger btn-toxic" onclick="commitToxic()" style="margin-top: 0; margin-bottom: 10px; border-radius: 4px;">[ 记录违规/不良习惯 ]</button>
-                    
-                    <div class="checkbox-row" style="margin-bottom: 0;">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="chk-memory-tax">
-                            <span class="checkbox-text">
-                                <span class="checkbox-title">模糊回忆 / 记忆熵税 -30%</span>
-                                <span class="checkbox-desc">为过去补录数据时，自动打 7 折以对冲认知美化偏差。</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- AI Record Panel -->
-                <div class="record-mode-panel" id="rpanel-ai">
-                    <div class="section-desc" style="margin-bottom: 10px;">用自然语言记录你的日常行为与感受，AI 会自动解析并分配经验。留空则单纯召唤 AI 点评当前状态。</div>
-                    <textarea id="in-oracle-journal" rows="4" placeholder="例如：昨晚总睡眠7.5小时，深睡1.5小时，REM 1.6小时，HRV 45，RHR 65。今天跑步了40分钟，专注阅读了1小时..."></textarea>
-                    <button id="btn-oracle-auto" class="btn-primary" style="margin-top: 10px; width: 100%; border-color: var(--cyan); color: var(--cyan); background: rgba(0, 184, 212, 0.1);">[ 提交 AI 分析 ]</button>
-                    
-                    <div class="checkbox-row" style="margin-top: 12px; margin-bottom: 0;">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="chk-memory-tax-ai">
-                            <span class="checkbox-text">
-                                <span class="checkbox-title">模糊回忆 / 记忆熵税 -30%</span>
-                                <span class="checkbox-desc">勾选后 AI 结算经验时自动打 7 折。</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -784,70 +749,111 @@
     </div> <!-- END page-home -->
 
     <div id="page-stats" class="page-view">
-        <!-- ===== SECTION 2.5: ANALYTICS (CHARTS) ===== -->
+        <!-- ===== SECTION 2.5: DASHBOARD & ANALYTICS ===== -->
+        <div class="card" id="card-dashboard">
+            <div class="section">
+                <div class="section-title">数据概览 (Data Dashboard)</div>
+                <!-- Row 1: Key Metrics -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--panel-border);">
+                        <div style="font-size: 0.7rem; color: var(--text-hint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">累计活跃</div>
+                        <div id="dash-total-days" style="font-size: 1.6rem; font-weight: 700; color: var(--primary); line-height: 1;">--</div>
+                        <div id="dash-total-days-sub" style="font-size: 0.7rem; color: var(--text-hint); margin-top: 4px;">本月 --</div>
+                    </div>
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--panel-border);">
+                        <div style="font-size: 0.7rem; color: var(--text-hint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">7日总 XP</div>
+                        <div id="dash-7d-xp" style="font-size: 1.6rem; font-weight: 700; color: var(--green); line-height: 1;">--</div>
+                        <div id="dash-7d-xp-sub" style="font-size: 0.7rem; color: var(--text-hint); margin-top: 4px;">日均 --</div>
+                    </div>
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--panel-border);">
+                        <div style="font-size: 0.7rem; color: var(--text-hint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">当前 HP</div>
+                        <div id="dash-current-hp" style="font-size: 1.6rem; font-weight: 700; line-height: 1;">--%</div>
+                        <div id="dash-hp-trend" style="font-size: 0.7rem; margin-top: 4px;">--</div>
+                    </div>
+                    <div style="background: var(--bg); padding: 14px; border-radius: 10px; border: 1px solid var(--panel-border);">
+                        <div style="font-size: 0.7rem; color: var(--text-hint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">最高属性</div>
+                        <div id="dash-highest-attr" style="font-size: 1.6rem; font-weight: 700; color: var(--text-main); line-height: 1;">--</div>
+                        <div id="dash-highest-sub" style="font-size: 0.7rem; color: var(--text-hint); margin-top: 4px;">--</div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Unified Attribute Milestone Bars (replaces old breakdown + matrix) -->
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 12px;">属性段位总览</div>
+                    <div id="dash-milestone-bars" style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- JS Generated -->
+                    </div>
+                </div>
+                
+                <!-- Row 4: AI Evaluation -->
+                <div style="background: rgba(0, 184, 212, 0.04); padding: 14px; border-radius: 10px; border: 1px solid rgba(0, 184, 212, 0.15);">
+                    <div style="font-size: 0.8rem; color: var(--cyan); font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>🤖 AI 综合评估</span>
+                        <button id="btn-oracle-eval" class="btn-primary" style="padding: 4px 10px; font-size: 0.72rem; margin: 0; background: rgba(0, 184, 212, 0.08); color: var(--cyan); border-color: rgba(0, 184, 212, 0.3); border-radius: 6px;">[ 请求点评 ]</button>
+                    </div>
+                    <div id="dash-ai-eval" style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; font-style: italic;">
+                        暂无最新评估。点击按钮让 AI 分析你近期的综合表现与建议。
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card" id="card-analytics">
             <div class="section">
             <div class="section-title">数据分析趋势 <span style="font-size:0.75rem; color:var(--text-hint); font-weight:normal;">近30天</span></div>
             <div style="position: relative; height: 200px; width: 100%;">
                 <canvas id="analytics-chart"></canvas>
             </div>
+            </div>
         </div>
-    </div>
 
+        <!-- ===== SECTION 3: LOGS (Moved to Stats) ===== -->
+        <div class="card" id="card-logs">
+            <div class="section" id="oracle-log-section">
+                <div class="oracle-header">
+                    <div class="section-title" style="margin-bottom: 0;">系统日志 (System Logs)</div>
+                </div>
+                <div id="oracle-log">
+                    <div>> 系统初始化完成。V6 版本已就绪。</div>
+                </div>
+            </div>
+        </div>
     </div> <!-- END page-stats -->
 
     <div id="page-mine" class="page-view">
-        <!-- ===== SECTION 3: COMBINED LOGS + SETTINGS ===== -->
-        <div class="card" id="card-logs">
-            <div class="section" id="oracle-log-section">
-            <div class="oracle-header">
-                <div class="section-title" style="margin-bottom: 0;">日志</div>
-                <button class="btn-gear" id="btn-gear" onclick="toggleSettingsDropdown()" title="设置">⚙️</button>
-            </div>
-            <div id="oracle-log">
-                <div>> 系统初始化完成。V6 版本已就绪。</div>
-            </div>
+        <!-- ===== SECTION 4: SETTINGS ===== -->
+        <div class="card" id="card-settings">
+            <div class="section">
+                <div class="section-title">系统管理 (Settings)</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                    <button class="btn-primary" id="btn-export" style="background: var(--bg-panel); color: var(--text-main); border-color: var(--border); text-align: left;">📦 导出本地数据 (Export)</button>
+                    <button class="btn-primary" id="btn-import" style="background: var(--bg-panel); color: var(--text-main); border-color: var(--border); text-align: left;">📥 导入本地数据 (Import)</button>
+                    <input type="file" id="file-import" style="display:none;" accept=".json">
+                    <button class="btn-danger" id="btn-reset" style="text-align: left;">🔄 恢复出厂设置 (Factory Reset)</button>
+                </div>
 
-            <!-- Settings Dropdown -->
-            <div class="settings-dropdown" id="settings-dropdown">
-                <div class="settings-dropdown-item" id="btn-export">
-                    <span class="icon">📦</span> 导出数据
-                </div>
-                <div class="settings-dropdown-item" id="btn-import">
-                    <span class="icon">📥</span> 导入数据
-                </div>
-                <input type="file" id="file-import" style="display:none;" accept=".json">
-
-                <div class="settings-dropdown-item" id="btn-toggle-settings">
-                    <span class="icon">🤖</span> AI 配置
-                </div>
-                <div class="settings-dropdown-item" id="btn-reset" style="color: var(--orange);">
-                    <span class="icon">🔄</span> 重置系统
-                </div>
-            </div>
-
-            <!-- AI Settings (hidden by default) -->
-            <div class="settings-section" id="settings-section" style="display: none; margin-top: 16px; padding: 16px; border: 1px dashed var(--border); border-radius: 8px;">
-                <div class="section-desc">配置 AI 助手连接。系统默认使用 DeepSeek。密钥仅保存在本地。</div>
-                <div class="settings-grid">
-                    <div class="settings-field">
-                        <label>API ENDPOINT</label>
-                        <input type="text" id="in-api-url" style="width: 100%;">
+                <div class="section-title">AI 节点配置 (AI Configuration)</div>
+                <div class="settings-section" id="settings-section" style="display: block; margin-top: 0; padding: 16px; border: 1px dashed var(--border); border-radius: 8px;">
+                    <div class="section-desc">系统默认使用 DeepSeek。密钥仅加密保存在本地浏览器缓存中。</div>
+                    <div class="settings-grid">
+                        <div class="settings-field">
+                            <label>API ENDPOINT</label>
+                            <input type="text" id="in-api-url" style="width: 100%;">
+                        </div>
+                        <div class="settings-field">
+                            <label>API KEY</label>
+                            <input type="password" id="in-api-key" placeholder="sk-..." style="width: 100%;">
+                        </div>
+                        <div class="settings-field">
+                            <label>MODEL ID</label>
+                            <input type="text" id="in-model-id" style="width: 100%;">
+                        </div>
                     </div>
-                    <div class="settings-field">
-                        <label>API KEY (密钥加密存储于本地)</label>
-                        <input type="password" id="in-api-key" placeholder="sk-..." style="width: 100%;">
-                    </div>
-                    <div class="settings-field">
-                        <label>MODEL ID</label>
-                        <input type="text" id="in-model-id" style="width: 100%;">
-                    </div>
+                    <button id="btn-save-settings" style="width: 100%; margin-top: 5px;" class="btn-primary">[ 保存配置 ]</button>
                 </div>
-                <button id="btn-save-settings" style="width: 100%; margin-top: 5px;" class="btn-primary">[ 保存配置 ]</button>
             </div>
         </div>
-    </div>
-
     </div> <!-- END page-mine -->
 
     <!-- ===== BOTTOM NAVIGATION ===== -->
@@ -865,6 +871,73 @@
             <span>我的</span>
         </div>
     </nav>
+
+    <div class="record-overlay" id="record-overlay" onclick="if(event.target===this) toggleRecordOverlay()">
+        <div class="record-modal-content">
+            <button class="modal-close-btn" onclick="toggleRecordOverlay()">✕</button>
+            <div class="section-title" style="margin-top: 0; font-size: 1.2rem; margin-bottom: 20px;">记录生命体征 (HP)</div>
+            
+            <div class="section-subtitle" style="margin-top: 0;">/// 睡眠恢复</div>
+            <div class="sleep-grid">
+                <div class="hm-field">
+                    <label>总计 / Total</label>
+                    <div class="hm-inputs">
+                        <input type="number" id="slp-t-h" placeholder="0" min="0"><span>h</span>
+                        <input type="number" id="slp-t-m" placeholder="0" min="0" max="59"><span>m</span>
+                    </div>
+                </div>
+                <div class="hm-field">
+                    <label>深度 / Deep</label>
+                    <div class="hm-inputs">
+                        <input type="number" id="slp-d-h" placeholder="0" min="0"><span>h</span>
+                        <input type="number" id="slp-d-m" placeholder="0" min="0" max="59"><span>m</span>
+                    </div>
+                </div>
+                <div class="hm-field">
+                    <label>快眼 / REM</label>
+                    <div class="hm-inputs">
+                        <input type="number" id="slp-r-h" placeholder="0" min="0"><span>h</span>
+                        <input type="number" id="slp-r-m" placeholder="0" min="0" max="59"><span>m</span>
+                    </div>
+                </div>
+            </div>
+            <div class="section-subtitle">/// 自主神经 (HRV / RHR)</div>
+            <div class="vitals-grid">
+                <div class="vitals-input">
+                    <label>HRV <span style="font-size:0.65rem; color:var(--text-hint);">值越高越放松</span></label>
+                    <input type="number" id="in-hrv" min="1" placeholder="例如: 45">
+                </div>
+                <div class="vitals-input">
+                    <label>RHR <span style="font-size:0.65rem; color:var(--text-hint);">值越低越轻松</span></label>
+                    <input type="number" id="in-rhr" min="30" max="200" placeholder="例如: 65">
+                </div>
+            </div>
+            <button id="btn-sync-vitals" class="btn-primary" style="width: 100%; margin-top: 5px;">[ 同步体征 ]</button>
+
+            <!-- Danger Zone -->
+            <details style="margin-top: 24px; border: 1px solid var(--orange); border-radius: 8px; padding: 12px; background: rgba(255, 149, 0, 0.05);">
+                <summary style="color: var(--orange); font-weight: 600; cursor: pointer; outline: none; list-style: none;">
+                    ⚠️ Danger Zone (违规记录)
+                </summary>
+                <div style="margin-top: 12px; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px;">主动坦白不良习惯，系统将扣除对应的经验值作为惩罚。</div>
+                <button id="btn-toxic" class="btn-danger btn-toxic" onclick="commitToxic()" style="width: 100%; margin-top: 0; border-radius: 4px;">[ 记录违规 / 接受惩罚 ]</button>
+            </details>
+        </div>
+    </div>
+
+    <!-- AI Overlay Modal -->
+    <div class="record-overlay" id="ai-overlay" onclick="if(event.target===this) toggleAiOverlay()">
+        <div class="record-modal-content">
+            <button class="modal-close-btn" onclick="toggleAiOverlay()">✕</button>
+            <div class="section-title" style="margin-top: 0; font-size: 1.2rem; margin-bottom: 20px;">🤖 AI Oracle (自动解析)</div>
+            <div class="section-desc" style="margin-bottom: 10px;">用自然语言记录你的日常行为与感受，AI 会自动解析并分配经验和体征数据。留空则单纯召唤 AI 点评当前状态。</div>
+            <textarea id="in-oracle-journal" rows="5" placeholder="例如：昨晚总睡眠7.5小时，深睡1.5小时，REM 1.6小时，HRV 45，RHR 65。今天跑步了40分钟，专注阅读了1小时..."></textarea>
+            <button id="btn-oracle-auto" class="btn-primary" style="margin-top: 16px; width: 100%; border-color: var(--cyan); color: var(--cyan); background: rgba(0, 184, 212, 0.1);">[ 提交 AI 分析 ]</button>
+        </div>
+    </div>
+
+    <!-- FAB Button -->
+    <div class="fab-ai" onclick="toggleAiOverlay()" title="AI 快速记录">🤖</div>
 
 <script>
 /**
@@ -1221,19 +1294,51 @@ function toggleRecordOverlay() {
     overlay.classList.toggle('active');
 }
 
-function switchRecordMode(mode) {
-    document.getElementById('rtab-manual').classList.remove('active');
-    document.getElementById('rtab-ai').classList.remove('active');
-    document.getElementById('rpanel-manual').classList.remove('active');
-    document.getElementById('rpanel-ai').classList.remove('active');
-    
-    document.getElementById('rtab-' + mode).classList.add('active');
-    document.getElementById('rpanel-' + mode).classList.add('active');
+function toggleAiOverlay() {
+    const overlay = document.getElementById('ai-overlay');
+    overlay.classList.toggle('active');
 }
 
 function toggleSettingsDropdown() {
     const dropdown = document.getElementById('settings-dropdown');
     dropdown.classList.toggle('active');
+}
+
+function checkMorningCard() {
+    const todayStr = new Date().toLocaleDateString();
+    const dismissedDate = localStorage.getItem('morningCardDismissed');
+    
+    const todayMid = getMidnight(new Date());
+    const todayLogs = DB.action_log.filter(l => getMidnight(new Date(l.t)) === todayMid);
+    const hasVitals = todayLogs.some(l => l.type === 'VITALS' && !l.revoked);
+    
+    const card = document.getElementById('morning-checkin-card');
+    if (card) {
+        if (!hasVitals && dismissedDate !== todayStr) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    }
+}
+
+function dismissMorningCard() {
+    const todayStr = new Date().toLocaleDateString();
+    localStorage.setItem('morningCardDismissed', todayStr);
+    const card = document.getElementById('morning-checkin-card');
+    if (card) {
+        card.style.transition = 'opacity 0.3s, transform 0.3s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-10px)';
+        setTimeout(() => { card.style.display = 'none'; }, 300);
+    }
+}
+
+function openVitalsRecord() {
+    const overlay = document.getElementById('record-overlay');
+    if (!overlay.classList.contains('active')) {
+        toggleRecordOverlay();
+    }
 }
 
 // ===== 系统初始化 =====
@@ -1254,6 +1359,15 @@ function bootUI() {
     renderRadar();
     renderVitalsUI();
     if (typeof renderAnalyticsChart === 'function') renderAnalyticsChart();
+    if (typeof renderStatsDashboard === 'function') renderStatsDashboard();
+    
+    checkMorningCard();
+    
+    if (!DB.settings) DB.settings = { api_url: '', api_key: '', model_id: '' };
+    document.getElementById('in-api-url').value = DB.settings.api_url || '';
+    document.getElementById('in-api-key').value = DB.settings.api_key || '';
+    document.getElementById('in-model-id').value = DB.settings.model_id || '';
+    
     setupEventListeners();
 }
 
@@ -1358,6 +1472,13 @@ function calculateDecay() {
 
 // ===== Vitals =====
 function syncVitals() {
+    const prevState = {
+        hrv_ema: DB.vitals_ema.hrv_ema,
+        rhr_ema: DB.vitals_ema.rhr_ema,
+        hp: DB.current_hp,
+        buff: DB.current_buff,
+        debuffs: DB.current_debuffs ? [...DB.current_debuffs] : []
+    };
     const th = parseInt(document.getElementById('slp-t-h').value) || 0;
     const tm = parseInt(document.getElementById('slp-t-m').value) || 0;
     const dh = parseInt(document.getElementById('slp-d-h').value) || 0;
@@ -1437,7 +1558,8 @@ function syncVitals() {
         attrs: ['SYS'],
         xp: 0,
         desc: `状态同步 (Sleep:${sleepStr} HRV:${hrv} RHR:${rhr})`,
-        t: actionTime
+        t: actionTime,
+        previous_state: prevState
     });
 
     ['slp-t-h', 'slp-t-m', 'slp-d-h', 'slp-d-m', 'slp-r-h', 'slp-r-m', 'in-hrv', 'in-rhr'].forEach(id => {
@@ -1445,11 +1567,225 @@ function syncVitals() {
         if(el) el.value = '';
     });
 
+    const overlay = document.getElementById('record-overlay');
+    if (overlay && overlay.classList.contains('active')) toggleRecordOverlay();
+
     saveData(); renderVitalsUI(); renderHeatmap();
     if (isToday) {
         logOracle(`> HP: ${DB.current_hp}% | BUFF: x${DB.current_buff.toFixed(1)}`);
     } else {
         logOracle(`> 补录昨日体征 (不覆盖今日状态)`);
+    }
+}
+
+function renderStatsDashboard() {
+    const ATTR_COLORS = { STR: '#FF3154', CON: '#FFCC00', FOC: '#00C7FF', WIL: '#BF5AF2' };
+    const TIER_DEFS = [
+        { min: 1, max: 10, name: '亚健康', color: 'var(--text-hint)' },
+        { min: 10, max: 25, name: '基础线', color: 'var(--text-dim)' },
+        { min: 25, max: 45, name: '进阶态', color: 'var(--primary)' },
+        { min: 45, max: 70, name: '准极限', color: 'var(--green)' },
+        { min: 70, max: 999, name: '巅峰域', color: 'var(--orange)' }
+    ];
+    function getTier(lvl) {
+        return TIER_DEFS.find(t => lvl >= t.min && lvl < t.max) || TIER_DEFS[TIER_DEFS.length - 1];
+    }
+
+    // --- 1. Total & Monthly active days ---
+    const allDates = new Set();
+    const now = new Date();
+    const thisMonth = now.getFullYear() + '-' + now.getMonth();
+    const monthDates = new Set();
+    DB.action_log.forEach(l => {
+        const d = new Date(l.t);
+        allDates.add(d.toDateString());
+        if (d.getFullYear() + '-' + d.getMonth() === thisMonth) monthDates.add(d.toDateString());
+    });
+    const elTotal = document.getElementById('dash-total-days');
+    const elTotalSub = document.getElementById('dash-total-days-sub');
+    if (elTotal) elTotal.innerText = allDates.size + ' 天';
+    if (elTotalSub) elTotalSub.innerText = `本月 ${monthDates.size} 天`;
+
+    // --- 2. 7-day XP ---
+    const d7ago = Date.now() - 7 * 86400000;
+    let xp7d = 0;
+    DB.action_log.forEach(l => {
+        if (l.t > d7ago && l.type === 'XP' && !l.revoked) xp7d += l.xp;
+    });
+    const el7dXp = document.getElementById('dash-7d-xp');
+    const el7dSub = document.getElementById('dash-7d-xp-sub');
+    if (el7dXp) el7dXp.innerText = '+' + Math.round(xp7d);
+    if (el7dSub) el7dSub.innerText = `日均 ${Math.round(xp7d / 7)} XP`;
+
+    // --- 3. Current HP ---
+    const elHp = document.getElementById('dash-current-hp');
+    const elHpTrend = document.getElementById('dash-hp-trend');
+    const hp = DB.current_hp || 0;
+    if (elHp) {
+        elHp.innerText = hp > 0 ? hp + '%' : '--%';
+        elHp.style.color = hp >= 80 ? 'var(--green)' : hp >= 40 ? 'var(--text-main)' : 'var(--orange)';
+    }
+    if (elHpTrend) {
+        if (hp >= 80) { elHpTrend.innerText = '🟢 极佳'; elHpTrend.style.color = 'var(--green)'; }
+        else if (hp >= 60) { elHpTrend.innerText = '🟡 良好'; elHpTrend.style.color = '#DAA520'; }
+        else if (hp > 0) { elHpTrend.innerText = '🔴 警戒'; elHpTrend.style.color = 'var(--orange)'; }
+        else { elHpTrend.innerText = '未录入'; elHpTrend.style.color = 'var(--text-hint)'; }
+    }
+
+    // --- 4. Highest attribute ---
+    let maxKey = 'STR', maxLvl = 0;
+    const attrData = {};
+    ['STR', 'CON', 'FOC', 'WIL'].forEach(key => {
+        const stats = calcLevelObj(DB.attributes[key].total_xp);
+        attrData[key] = stats;
+        if (stats.level > maxLvl) { maxLvl = stats.level; maxKey = key; }
+    });
+    const elHighest = document.getElementById('dash-highest-attr');
+    const elHighestSub = document.getElementById('dash-highest-sub');
+    if (elHighest) {
+        elHighest.innerText = ATTR_CONFIG[maxKey].name + ' LV.' + maxLvl;
+        elHighest.style.color = ATTR_COLORS[maxKey];
+    }
+    if (elHighestSub) {
+        const tier = getTier(maxLvl);
+        elHighestSub.innerHTML = `<span style="color:${tier.color};">${tier.name}</span> 段位`;
+    }
+
+    // --- 5. Unified Milestone Bars ---
+    const TIER_DESCS = {
+        STR: [
+            '肌肉流失，核心无力 (神经募集极低)', 
+            '建立骨骼肌装甲，掌控自身体重', 
+            '神经募集效率极高，远超常人爆发力 (放电率大幅提升)', 
+            '逼近自然基因上限，业余竞技顶尖 (1.5x+体重卧推)', 
+            '职业竞技水准，挑战物种生理极限 (2.0x+体重卧推，极致神经同步)'
+        ],
+        CON: [
+            'VO2Max<30，轻度活动气促', 
+            '建立有氧底座，线粒体密度改善', 
+            'VO2Max优秀(55+)，极强心血管引擎', 
+            '精英级耐力(65+)，极限耐力底座', 
+            '世界级引擎(75+)，心血管达极致 (线粒体网络高度融合)'
+        ],
+        FOC: [
+            '注意力碎片化，依赖外界刺激', 
+            '具备屏蔽干扰能力，稳定深度工作1-2h', 
+            '随时切入心流，高强度复杂认知3-4h', 
+            '逼近4h代谢天花板，认知耐力达极限', 
+            '稳定触达4h极限，单位产出远超常人'
+        ],
+        WIL: [
+            '行为受本能驱动，无法形成习惯', 
+            '建立微习惯系统，依靠环境维持节律 (66天自动化原则)', 
+            '延迟满足内化本能，行动与负面情绪解绑', 
+            '目标刚性极高，极端逆境下执行节律', 
+            '抗压与自控达生理极限，可影响自主神经反应'
+        ]
+    };
+    const TIER_LABELS = ['亚健康', '基础线', '进阶态', '准极限', '巅峰域'];
+    const TIER_LV_BOUNDS = [1, 10, 25, 45, 70]; // start of each tier
+    const TIER_LV_MAX = 100; // conceptual max for bar width calculation
+
+    const milestoneEl = document.getElementById('dash-milestone-bars');
+    if (milestoneEl) {
+        let html = '';
+        ['STR', 'CON', 'FOC', 'WIL'].forEach(key => {
+            const s = attrData[key];
+            const color = ATTR_COLORS[key];
+            const lvl = s.level;
+
+            // Determine which tier the user is in (0-4)
+            let activeTierIdx = 0;
+            for (let i = TIER_LV_BOUNDS.length - 1; i >= 0; i--) {
+                if (lvl >= TIER_LV_BOUNDS[i]) { activeTierIdx = i; break; }
+            }
+
+            // Calculate overall progress percentage across all tiers (for the filled bar)
+            // Map level to a 0-100% position using tier boundaries
+            const tierWidths = [10, 15, 20, 25, 30]; // visual weight % for each tier segment
+            let fillPct = 0;
+            let accWidth = 0;
+            for (let i = 0; i < 5; i++) {
+                const tStart = TIER_LV_BOUNDS[i];
+                const tEnd = (i < 4) ? TIER_LV_BOUNDS[i + 1] : TIER_LV_MAX;
+                if (lvl >= tEnd) {
+                    fillPct += tierWidths[i];
+                } else if (lvl >= tStart) {
+                    const segProgress = (lvl - tStart) / (tEnd - tStart);
+                    // Add sub-level progress within the segment
+                    fillPct += tierWidths[i] * (segProgress + s.progress / (tEnd - tStart));
+                    break;
+                } else {
+                    break;
+                }
+            }
+            fillPct = Math.min(100, Math.max(1, fillPct));
+
+            // Build tier segments HTML
+            let segmentsHtml = '';
+            let markersHtml = '';
+            accWidth = 0;
+            for (let i = 0; i < 5; i++) {
+                const isActive = (i === activeTierIdx);
+                const isPast = (i < activeTierIdx);
+                const w = tierWidths[i];
+                const tColor = TIER_DEFS[i].color;
+                
+                // Escape quotes for the onclick handler
+                const safeDesc = TIER_DESCS[key][i].replace(/'/g, "\\'");
+                
+                segmentsHtml += `<div style="
+                    width:${w}%; height:100%; position:relative; cursor:pointer;
+                    ${i < 4 ? 'border-right: 1px solid rgba(255,255,255,0.08);' : ''}
+                    display:flex; align-items:center; justify-content:center;
+                    ${isActive ? `background:${color}18;` : ''}
+                " 
+                title="${TIER_DESCS[key][i]}" 
+                onclick="document.getElementById('desc-${key}').innerText = '【${TIER_LABELS[i]}】 ${safeDesc}';">
+                    <span style="font-size:0.58rem; color:${isActive ? color : 'var(--text-hint)'}; font-weight:${isActive ? '700' : '400'}; opacity:${isPast || isActive ? '1' : '0.4'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; pointer-events:none;">
+                        ${TIER_LABELS[i]}
+                    </span>
+                </div>`;
+                
+                // Tier boundary markers (except first)
+                if (i > 0) {
+                    markersHtml += `<div style="position:absolute; left:${accWidth}%; top:-1px; bottom:-1px; width:1px; background:rgba(255,255,255,0.06); z-index:1; pointer-events:none;"></div>`;
+                }
+                accWidth += w;
+            }
+
+            // Current tier description
+            const desc = TIER_DESCS[key][activeTierIdx];
+            const nextTierName = activeTierIdx < 4 ? TIER_LABELS[activeTierIdx + 1] : null;
+            const nextTierLv = activeTierIdx < 4 ? TIER_LV_BOUNDS[activeTierIdx + 1] : null;
+            const lvToNext = nextTierLv ? nextTierLv - lvl : null;
+
+            html += `<div style="background:var(--bg); border-radius:10px; border:1px solid var(--panel-border); padding:12px; transition:all 0.2s;">
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
+                    <div style="display:flex; align-items:baseline; gap:8px;">
+                        <span style="font-size:0.75rem; font-weight:700; color:${color};">${key}</span>
+                        <span style="font-size:0.68rem; color:var(--text-dim);">${ATTR_CONFIG[key].name}</span>
+                        <span style="font-size:1rem; font-weight:800; color:var(--text-main);">LV.${lvl}</span>
+                    </div>
+                    <span style="font-size:0.65rem; color:var(--text-hint); font-variant-numeric:tabular-nums;">${s.xp_into_level}/${s.xp_needed} XP</span>
+                </div>
+                <!-- Segmented bar -->
+                <div style="position:relative; height:20px; background:var(--panel-border); border-radius:4px; overflow:hidden; display:flex;">
+                    <!-- Fill overlay -->
+                    <div style="position:absolute; left:0; top:0; bottom:0; width:${fillPct}%; background:linear-gradient(90deg, ${color}90, ${color}60); border-radius:4px; z-index:2; transition:width 0.6s ease; pointer-events:none;"></div>
+                    <!-- Segments with labels -->
+                    ${segmentsHtml}
+                    <!-- Tier boundary markers -->
+                    ${markersHtml}
+                </div>
+                <!-- Description row -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; min-height:16px;">
+                    <span id="desc-${key}" style="font-size:0.65rem; color:var(--text-dim); line-height:1.3; transition:color 0.2s;">【${TIER_LABELS[activeTierIdx]}】 ${desc}</span>
+                    ${lvToNext !== null ? `<span style="font-size:0.6rem; color:var(--text-hint); white-space:nowrap; margin-left:8px;">→ ${nextTierName} 还差 ${lvToNext} 级</span>` : `<span style="font-size:0.6rem; color:${color}; white-space:nowrap; margin-left:8px;">★ 巅峰域</span>`}
+                </div>
+            </div>`;
+        });
+        milestoneEl.innerHTML = html;
     }
 }
 
@@ -1466,12 +1802,16 @@ function getActiveTagsInline(baseAttr) {
 function commitToxic() {
     const attrStats = calcLevelObj(DB.attributes.FOC.total_xp);
     const penalty = Math.floor(attrStats.xp_needed * 0.30);
-    showConfirm(`系统违规确认 (多巴胺透支)：\n系统将直接扣除 FOC (专注) 当前升级所需经验的 30%（-${penalty} XP）。不可撤销。`, () => {
+    showConfirm(`系统违规确认 (多巴胺透支)：\n系统将直接扣除 FOC (专注) 当前升级所需经验的 30%（-${penalty} XP）。`, () => {
         DB.attributes.FOC.total_xp = Math.max(0, DB.attributes.FOC.total_xp - penalty);
         const actionTime = window.selectedHeatmapDate || Date.now();
         addActionLog('TOXIC', ['FOC'], -penalty, '违规行为惩罚', actionTime);
         logOracle(`CRITICAL: 违规记录。FOC -${penalty} XP`, 'negative');
         window.openInlinePanel = null;
+        
+        const overlay = document.getElementById('record-overlay');
+        if (overlay && overlay.classList.contains('active')) toggleRecordOverlay();
+        
         saveData(); renderHeatmap(); renderRadar();
     });
 }
@@ -1482,8 +1822,18 @@ function commitInline(baseAttr) {
     const val = parseFloat(document.getElementById(`in-duration-${baseAttr}`).value);
     const intensity = Math.min(3.0, Math.max(0.1, parseFloat(document.getElementById(`in-intensity-${baseAttr}`).value) || 1.0));
     
-    const chkTax = document.getElementById('chk-memory-tax');
-    const hasTax = chkTax ? chkTax.checked : false;
+    // Dynamic Memory Tax
+    const todayMid = getMidnight(new Date());
+    const actionMid = getMidnight(new Date(actionTime));
+    const diffDays = Math.round((todayMid - actionMid) / 86400000);
+    
+    let memoryTaxMult = 1.0;
+    let memoryTaxName = '';
+    if (diffDays > 0) {
+        if (diffDays <= 3) { memoryTaxMult = 0.9; memoryTaxName = '短期记忆税 -10%'; }
+        else if (diffDays <= 7) { memoryTaxMult = 0.8; memoryTaxName = '中期记忆税 -20%'; }
+        else { memoryTaxMult = 0.7; memoryTaxName = '长期熵税 -30%'; }
+    }
 
     if (isNaN(val) || val <= 0) { logOracle('ERR: 请输入有效时长/次数。', 'negative'); return; }
     if (val > 1000) { logOracle('ERR: 单次录入过大(>1000)。', 'negative'); return; }
@@ -1494,9 +1844,9 @@ function commitInline(baseAttr) {
     else if (tags.length === 4) hybridMult = 0.40;
 
     let baseXp = val * 1.0;
-    let baseTotalMult = intensity * DB.current_buff * hybridMult;
+    let baseTotalMult = intensity * DB.current_buff * hybridMult * memoryTaxMult;
     let baseTaxFlags = [];
-    if (hasTax) { baseTotalMult *= 0.7; baseTaxFlags.push('熵税'); }
+    if (memoryTaxMult < 1.0) { baseTaxFlags.push(memoryTaxName); }
     if (hybridMult < 1.0) baseTaxFlags.push(`并发折损×${hybridMult.toFixed(2)}`);
 
     let levelUpMsg = "";
@@ -1570,7 +1920,6 @@ function commitInline(baseAttr) {
     logOracle(`> [${tags.join('+')}] 共 +${Math.floor(finalActionXpSum)} XP. ${summaryDesc}`);
     if (levelUpMsg) logOracle(`>>> LEVEL UP!${levelUpMsg}`, 'positive');
 
-    if (chkTax) chkTax.checked = false;
     window.openInlinePanel = null;
     saveData(); renderRadar(); renderHeatmap();
 }
@@ -1588,15 +1937,30 @@ function addActionLog(type, attrs, xp, desc, customTime = null) {
 
 function revokeAction(id) {
     const entry = DB.action_log.find(x => x.id === id);
-    if (!entry || entry.revoked || entry.type === 'TOXIC') return;
+    if (!entry || entry.revoked) return;
 
-    showConfirm(`确认撤销该记录并扣除 XP？`, () => {
-        entry.attrs.forEach(attr => {
-            DB.attributes[attr].total_xp = Math.max(0, DB.attributes[attr].total_xp - entry.xp);
-        });
+    let msg = `确认撤销该记录并重置相关数据？`;
+    if (entry.type === 'TOXIC') msg = `确认撤销该违规记录并返还损失的经验？`;
+    
+    showConfirm(msg, () => {
+        if (entry.type === 'VITALS') {
+            if (entry.previous_state) {
+                DB.vitals_ema.hrv_ema = entry.previous_state.hrv_ema;
+                DB.vitals_ema.rhr_ema = entry.previous_state.rhr_ema;
+                DB.current_hp = entry.previous_state.hp;
+                DB.current_buff = entry.previous_state.buff;
+                DB.current_debuffs = [...entry.previous_state.debuffs];
+            }
+            logOracle(`> SYS: 已撤销体征记录，状态基线回滚。`, 'system');
+        } else {
+            entry.attrs.forEach(attr => {
+                DB.attributes[attr].total_xp = Math.max(0, DB.attributes[attr].total_xp - entry.xp);
+            });
+            logOracle(`> SYS: 已撤销记录 [${entry.attrs.join('+')}] ${entry.xp < 0 ? '+' : '-'}${Math.abs(entry.xp)} XP`, 'system');
+        }
+        
         entry.revoked = true;
-        logOracle(`> SYS: 已撤销记录 [${entry.attrs.join('+')}] -${entry.xp} XP`, 'system');
-        saveData(); renderHeatmap();
+        saveData(); renderHeatmap(); renderRadar(); renderVitalsUI();
     });
 }
 
@@ -1644,6 +2008,10 @@ function renderVitalsUI() {
         
         if (DB.current_debuffs.includes('COGNITIVE_RESERVE')) 
             badges.push({ text: '▲ 认知储备', class: 'status-buff', tip: '【FOC/WIL +15%】深度与REM睡眠双极化充足。前额叶与海马体代谢彻底，意志力槽极深。' });
+    }
+    
+    if (badges.length === 0) {
+        badges.push({ text: '✓ 状态平稳', class: 'status-neutral', tip: '一切正常。生命体征平稳，无特殊状态增益或衰减。' });
     }
     
     if (badges.length > 0) {
@@ -1739,22 +2107,22 @@ function renderRadar() {
         }
 
         container.insertAdjacentHTML('beforeend', `
-            <div class="attr-row">
-                <div class="attr-header">
+            <div class="attr-row" style="cursor:pointer; transition: background 0.2s;" onclick="toggleInlinePanel('${key}')" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='none'" title="点击展开/折叠录入面板">
+                <div class="attr-header" style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;">
                     <div class="attr-name-group">
                         <span class="attr-name">${key}</span>
                         <span class="attr-label">${conf.name}</span>
-                        <span class="attr-level">LV.${stats.level.toString().padStart(2, '0')}<span class="btn-add-xp" onclick="if(typeof event !== 'undefined' && event) event.stopPropagation(); toggleInlinePanel('${key}');">+</span></span>
+                        <span class="attr-level">LV.${stats.level.toString().padStart(2, '0')}</span>
                     </div>
-                    <span class="${decayClass} tip" data-tip="当前等级衰减率(1/√LV): ${(actRate*100).toFixed(2)}%。基础率: ${(conf.base_decay*100).toFixed(1)}%">${decayMsg}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="${decayClass} tip" data-tip="当前等级衰减率(1/√LV): ${(actRate*100).toFixed(2)}%。基础率: ${(conf.base_decay*100).toFixed(1)}%">${decayMsg}</span>
+                        <div style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border); font-weight: bold; font-size: 1.1rem; padding-bottom: 1px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">+</div>
+                    </div>
                 </div>
-                <div class="attr-desc">${conf.desc}</div>
-                <div class="progress-bar-container" style="cursor:pointer;" onclick="toggleInlinePanel('${key}')" title="点击展开/折叠输入栏">
-                    <div class="progress-bg"><div class="progress-fill" style="width: ${pct}%"></div></div>
-                    <span class="xp-text">${stats.xp_into_level} / ${stats.xp_needed}</span>
-                    <span class="xp-total">Σ ${Math.floor(attr.total_xp)}</span>
+                <div style="font-size: 0.75rem; color: var(--text-hint); margin-bottom: ${window.openInlinePanel === key ? '12px' : '0'};">${conf.desc}</div>
+                <div onclick="if(typeof event !== 'undefined' && event) event.stopPropagation();">
+                    ${inlineHtml}
                 </div>
-                ${inlineHtml}
             </div>
         `);
     });
@@ -1933,39 +2301,39 @@ function renderHeatmapDetail(dMid, logs, dateStr, isToday) {
     
     if (logs.length === 0) {
         detailBox.insertAdjacentHTML('beforeend', '<div style="color:var(--text-hint); padding: 5px 0;">[当日无数据 / 记忆空白]</div>');
-        return;
+    } else {
+        const list = document.createElement('div');
+        list.className = 'history-list';
+        
+        const sorted = [...logs].sort((a,b) => b.t - a.t);
+        sorted.forEach((entry, idx) => {
+            const d = new Date(entry.t);
+            const timeStr = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+            
+            let xpStr = entry.xp > 0 ? `+${entry.xp}` : `${entry.xp}`;
+            let xpClass = entry.xp < 0 ? 'hist-xp negative' : 'hist-xp';
+            if (entry.revoked) { xpStr = '<s>REVOKED</s>'; xpClass = 'hist-xp negative'; }
+
+            let btnHtml = '';
+            if (!entry.revoked && entry.type !== 'TOXIC' && entry.type !== 'VITALS' && entry.type !== 'SYSTEM') {
+                btnHtml = `<button class="btn-revoke" onclick="revokeAction('${entry.id}')">[撤销]</button>`;
+            }
+
+            list.insertAdjacentHTML('beforeend', `
+                <div class="history-item" style="background: transparent; padding: 8px 0; border-bottom: 1px dashed var(--border); border-radius: 0;">
+                    <div class="hist-top">
+                        <span class="hist-time">${timeStr}</span>
+                        <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
+                        <span class="${xpClass}">${xpStr}</span>
+                        ${btnHtml}
+                    </div>
+                    <div class="hist-desc">${entry.desc}</div>
+                </div>
+            `);
+        });
+        detailBox.appendChild(list);
     }
     
-    const list = document.createElement('div');
-    list.className = 'history-list';
-    
-    const sorted = [...logs].sort((a,b) => b.t - a.t);
-    sorted.forEach((entry, idx) => {
-        const d = new Date(entry.t);
-        const timeStr = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-        
-        let xpStr = entry.xp > 0 ? `+${entry.xp}` : `${entry.xp}`;
-        let xpClass = entry.xp < 0 ? 'hist-xp negative' : 'hist-xp';
-        if (entry.revoked) { xpStr = '<s>REVOKED</s>'; xpClass = 'hist-xp negative'; }
-
-        let btnHtml = '';
-        if (!entry.revoked && entry.type !== 'TOXIC' && entry.type !== 'VITALS' && entry.type !== 'SYSTEM') {
-            btnHtml = `<button class="btn-revoke" onclick="revokeAction('${entry.id}')">[撤销]</button>`;
-        }
-
-        list.insertAdjacentHTML('beforeend', `
-            <div class="history-item" style="background: transparent; padding: 8px 0; border-bottom: 1px dashed var(--border); border-radius: 0;">
-                <div class="hist-top">
-                    <span class="hist-time">${timeStr}</span>
-                    <span class="hist-attr">${Array.isArray(entry.attrs) ? entry.attrs.join('+') : (entry.attrs || '')}</span>
-                    <span class="${xpClass}">${xpStr}</span>
-                    ${btnHtml}
-                </div>
-                <div class="hist-desc">${entry.desc}</div>
-            </div>
-        `);
-    });
-    detailBox.appendChild(list);
 }
 
 function renderHistory() {
@@ -2066,6 +2434,8 @@ async function callOracleAuto() {
         let result = JSON.parse(match[0]);
         
         logOracle(`[AI 分析]: ${result.eval}`, 'positive');
+        const dashEval = document.getElementById('dash-ai-eval');
+        if (dashEval) dashEval.innerText = result.eval;
         
         if (result.actions && result.actions.length > 0) {
             let hasSTR = false, hasCON = false;
@@ -2095,18 +2465,26 @@ async function callOracleAuto() {
                     if (xpAmount <= 0 || !act.attrs || act.attrs.length === 0) return;
                     
                     const actionTime = window.selectedHeatmapDate || Date.now();
+                    const todayMid = getMidnight(new Date());
+                    const actionMid = getMidnight(new Date(actionTime));
+                    const diffDays = Math.round((todayMid - actionMid) / 86400000);
                     
-                    const chkTaxAi = document.getElementById('chk-memory-tax-ai');
-                    const hasTax = chkTaxAi ? chkTaxAi.checked : false;
+                    let memoryTaxMult = 1.0;
+                    let memoryTaxName = '';
+                    if (diffDays > 0) {
+                        if (diffDays <= 3) { memoryTaxMult = 0.9; memoryTaxName = '[短记忆税-10%]'; }
+                        else if (diffDays <= 7) { memoryTaxMult = 0.8; memoryTaxName = '[中记忆税-20%]'; }
+                        else { memoryTaxMult = 0.7; memoryTaxName = '[长记忆税-30%]'; }
+                    }
 
                     act.attrs.forEach(attr => {
                         if (DB.attributes[attr]) {
                             let finalXp = xpAmount;
                             let tags = [];
                             
-                            if (hasTax) {
-                                finalXp = Math.round(finalXp * 0.7);
-                                tags.push('[熵税-30%]');
+                            if (memoryTaxMult < 1.0) {
+                                finalXp = Math.round(finalXp * memoryTaxMult);
+                                tags.push(memoryTaxName);
                             }
 
                             if (attr === 'STR' && interference) {
@@ -2143,6 +2521,8 @@ async function callOracleAuto() {
             renderRadar();
             renderHeatmap();
             document.getElementById('in-oracle-journal').value = '';
+            const overlay = document.getElementById('ai-overlay');
+            if (overlay && overlay.classList.contains('active')) toggleAiOverlay();
         }
     } catch (e) {
         logOracle(`ERR: 解析失败 (${e.message})`, 'negative');
@@ -2310,27 +2690,15 @@ function setupEventListeners() {
     document.getElementById('btn-oracle-auto').addEventListener('click', callOracleAuto);
 
 
-    // Settings
-    document.getElementById('btn-toggle-settings').addEventListener('click', () => {
-        const sec = document.getElementById('settings-section');
-        const dropdown = document.getElementById('settings-dropdown');
-        dropdown.classList.remove('active');
-        if (sec.style.display !== 'block') {
-            sec.style.display = 'block';
-            if (!DB.settings) DB.settings = { api_url: '', api_key: '', model_id: '' };
-            document.getElementById('in-api-url').value = DB.settings.api_url || '';
-            document.getElementById('in-api-key').value = DB.settings.api_key || '';
-            document.getElementById('in-model-id').value = DB.settings.model_id || '';
-            sec.scrollIntoView({ behavior: 'smooth' });
-        } else { 
-            sec.style.display = 'none'; 
-        }
-    });
+    // AI & Settings
+    const btnOracleEval = document.getElementById('btn-oracle-eval');
+    if (btnOracleEval) btnOracleEval.addEventListener('click', callOracleAuto);
+    
     document.getElementById('btn-save-settings').addEventListener('click', () => {
         DB.settings.api_url = document.getElementById('in-api-url').value.trim() || DEFAULT_SETTINGS.api_url;
         DB.settings.api_key = document.getElementById('in-api-key').value.trim();
         DB.settings.model_id = document.getElementById('in-model-id').value.trim() || DEFAULT_SETTINGS.model_id;
-        saveData(); document.getElementById('settings-section').style.display = 'none';
+        saveData(); 
         logOracle('> AI 配置已保存。', 'system');
     });
 
