@@ -544,95 +544,171 @@
             <!-- STEP 1: 身体活动 (STR/CON) -->
             <div class="calib-step" id="step-1">
                 <div class="question-card">
-                    <div class="question-title">力量与抗阻训练 (STR)</div>
-                    <div class="question-desc">包括举重、器械、自重训练（俯卧撑/引体向上）等</div>
+                    <div class="question-title">力量底线与四肢/核心 (STR)</div>
+                    <div class="question-desc">曾经的训练决定了你的肌肉记忆和神经募集底线。</div>
                     <div style="margin-bottom: 10px;">
-                        <span class="calib-label" style="font-size:0.7rem;">累计训练年限</span>
-                        <div class="option-grid col-2" id="q-str-years">
-                            <div class="option-card selected" data-val="0">无经验/不到1年</div>
-                            <div class="option-card" data-val="1">1-3年 (中级)</div>
-                            <div class="option-card" data-val="3">3-5年 (高级)</div>
-                            <div class="option-card" data-val="5">5年以上 (精英)</div>
+                        <span class="calib-label" style="font-size:0.7rem;">历史底蕴：是否曾有1年以上的长期系统性运动/重体力劳动史？</span>
+                        <div class="option-grid col-2" id="q-str-history">
+                            <div class="option-card selected" data-val="0">从未或极少</div>
+                            <div class="option-card" data-val="1">有过业余训练/经常干体力活</div>
+                            <div class="option-card" data-val="2">专业训练史(体育生/军旅)</div>
+                        </div>
+                    </div>
+                    <div class="question-desc">当前的绝对力量基准测试：</div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">上肢推：你能一口气完成多少个标准俯卧撑？</span>
+                        <div class="option-grid col-2" id="q-str-push">
+                            <div class="option-card selected" data-val="0">做不到 5 个</div>
+                            <div class="option-card" data-val="1">5 - 15 个</div>
+                            <div class="option-card" data-val="2">16 - 30 个</div>
+                            <div class="option-card" data-val="3">30 个以上</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">上肢拉：你能完成多少个标准引体向上？</span>
+                        <div class="option-grid col-2" id="q-str-pull">
+                            <div class="option-card selected" data-val="0">做不到 1 个</div>
+                            <div class="option-card" data-val="1">1 - 5 个</div>
+                            <div class="option-card" data-val="2">6 - 12 个</div>
+                            <div class="option-card" data-val="3">12 个以上</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">核心稳定性：平板支撑最长坚持时间？</span>
+                        <div class="option-grid col-2" id="q-str-core">
+                            <div class="option-card selected" data-val="0">不到 30 秒</div>
+                            <div class="option-card" data-val="1">约 1 分钟</div>
+                            <div class="option-card" data-val="2">约 2 分钟</div>
+                            <div class="option-card" data-val="3">3 分钟及以上</div>
                         </div>
                     </div>
                     <div>
-                        <span class="calib-label" style="font-size:0.7rem;">每周训练频率</span>
-                        <div class="option-grid col-2" id="q-str-freq">
-                            <div class="option-card selected" data-val="0">不训练 / 0天</div>
-                            <div class="option-card" data-val="1">1-2天</div>
-                            <div class="option-card" data-val="3">3-4天</div>
-                            <div class="option-card" data-val="5">5天及以上</div>
+                        <span class="calib-label" style="font-size:0.7rem;">下肢爆发：连续自重深蹲(或等效负重)能力？</span>
+                        <div class="option-grid col-2" id="q-str-leg">
+                            <div class="option-card selected" data-val="0">做不了几个就腿酸</div>
+                            <div class="option-card" data-val="1">轻松连续 30 个</div>
+                            <div class="option-card" data-val="2">单腿深蹲 / 负重深蹲</div>
+                            <div class="option-card" data-val="3">极限深蹲达自身体重1.5倍以上</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="question-card">
-                    <div class="question-title">心肺与有氧耐力 (CON)</div>
-                    <div class="question-desc">包括跑步、游泳、骑行、高强度间歇等</div>
+                    <div class="question-title">心肺、代谢与体型 (CON)</div>
                     <div style="margin-bottom: 10px;">
-                        <span class="calib-label" style="font-size:0.7rem;">如果不休息，你最远能连续跑多远？</span>
-                        <div class="option-grid col-2" id="q-con-dist">
-                            <div class="option-card selected" data-val="0">跑不了1公里</div>
-                            <div class="option-card" data-val="1">1-3公里</div>
-                            <div class="option-card" data-val="5">5-10公里</div>
-                            <div class="option-card" data-val="10">半马或以上</div>
+                        <span class="calib-label" style="font-size:0.7rem;">心血管基准：你的静息心率 (RHR) 大约是多少？</span>
+                        <div class="option-grid col-2" id="q-con-rhr">
+                            <div class="option-card" data-val="0">80+ 或不知道</div>
+                            <div class="option-card selected" data-val="1">70-80 (普通)</div>
+                            <div class="option-card" data-val="2">60-70 (良好)</div>
+                            <div class="option-card" data-val="3">60以下 (优秀/运动员)</div>
                         </div>
                     </div>
-                </div>
-
-                <div class="question-card" style="border-color: var(--orange);">
-                    <div class="question-title" style="color: var(--orange);">最近3个月的运动状态变化？</div>
-                    <div class="question-desc">这决定了你的历史积累衰减了多少</div>
-                    <div class="option-grid col-2" id="q-trend">
-                        <div class="option-card" data-val="1.05">持续增加投入</div>
-                        <div class="option-card selected" data-val="1.0">保持原有频率</div>
-                        <div class="option-card" data-val="0.85">训练量明显减少</div>
-                        <div class="option-card" data-val="0.70">完全停止运动</div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">有氧表现 (VO2 Max 估算)：全力跑 3 公里大约需要多久？</span>
+                        <div class="option-grid col-2" id="q-con-vo2">
+                            <div class="option-card selected" data-val="0">跑不完 / 只能走</div>
+                            <div class="option-card" data-val="1">20 分钟以上</div>
+                            <div class="option-card" data-val="2">15 - 20 分钟</div>
+                            <div class="option-card" data-val="3">15 分钟以内</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">日常消耗 (NEAT)：你的平均步数或站立时长？</span>
+                        <div class="option-grid col-2" id="q-con-neat">
+                            <div class="option-card selected" data-val="0">纯久坐 (<3k步)</div>
+                            <div class="option-card" data-val="1">偶尔走动 (5k步)</div>
+                            <div class="option-card" data-val="2">较活跃 (1w步/经常站)</div>
+                            <div class="option-card" data-val="3">重度活动 (2w步以上)</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="calib-label" style="font-size:0.7rem;">体脂与代谢分布预估：</span>
+                        <div class="option-grid col-2" id="q-con-bf">
+                            <div class="option-card" data-val="0">严重肥胖 / 极度瘦弱</div>
+                            <div class="option-card selected" data-val="1">腹部有赘肉 / 偏胖</div>
+                            <div class="option-card" data-val="2">匀称健康</div>
+                            <div class="option-card" data-val="3">线条清晰，低体脂</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STEP 2: 认知意志 (FOC/WIL) -->
+            <!-- STEP 2: 认知与意志 (FOC/WIL) -->
             <div class="calib-step" id="step-2">
                 <div class="question-card">
                     <div class="question-title">专注与信息摄入 (FOC)</div>
                     <div style="margin-bottom: 10px;">
-                        <span class="calib-label" style="font-size:0.7rem;">不看手机/切网页，你能持续深度工作多久？</span>
-                        <div class="option-grid col-2" id="q-foc-time">
-                            <div class="option-card selected" data-val="1">不到15分钟</div>
-                            <div class="option-card" data-val="2">15-30分钟</div>
-                            <div class="option-card" data-val="3">30-60分钟</div>
-                            <div class="option-card" data-val="5">1小时以上</div>
+                        <span class="calib-label" style="font-size:0.7rem;">深度工作区间 (Deep Work Block)：无干扰下大脑能高强度运转多久？</span>
+                        <div class="option-grid col-2" id="q-foc-deep">
+                            <div class="option-card selected" data-val="0">不到 20 分钟就会走神</div>
+                            <div class="option-card" data-val="1">约 45 分钟</div>
+                            <div class="option-card" data-val="2">约 90 分钟</div>
+                            <div class="option-card" data-val="3">2 小时及以上的心流</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">碎片化抵抗力：遇到困难代码或枯燥阅读时，第一反应是？</span>
+                        <div class="option-grid" id="q-foc-resist">
+                            <div class="option-card selected" data-val="0">立刻切出去看微信/刷网页，逃避思考</div>
+                            <div class="option-card" data-val="1">稍微挣扎一下，但很快还是忍不住切走</div>
+                            <div class="option-card" data-val="2">能强制自己停留在界面，硬啃下来</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">长文本吞吐：最近一个月阅读专业书籍/长文的习惯？</span>
+                        <div class="option-grid col-2" id="q-foc-read">
+                            <div class="option-card selected" data-val="0">完全不读</div>
+                            <div class="option-card" data-val="1">偶尔读一两篇</div>
+                            <div class="option-card" data-val="2">每周都有固定时间阅读</div>
+                            <div class="option-card" data-val="3">每天都在深度阅读/摄入</div>
                         </div>
                     </div>
                     <div>
-                        <span class="calib-label" style="font-size:0.7rem;">每天花在短视频/社媒的无目的浏览时间</span>
+                        <span class="calib-label" style="font-size:0.7rem;">社媒依赖：每天花在短视频等算法推荐内容的无目的浏览时间？</span>
                         <div class="option-grid col-2" id="q-foc-doom">
-                            <div class="option-card" data-val="5">几乎没有 (<1h)</div>
-                            <div class="option-card selected" data-val="3">适度 (1-3h)</div>
-                            <div class="option-card" data-val="1">较多 (3-5h)</div>
-                            <div class="option-card" data-val="0">严重依赖 (5h+)</div>
+                            <div class="option-card" data-val="0">5小时以上 (严重依赖)</div>
+                            <div class="option-card selected" data-val="1">3-5小时 (较多)</div>
+                            <div class="option-card" data-val="2">1-3小时 (适度)</div>
+                            <div class="option-card" data-val="3">不到1小时 (高度自律)</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="question-card">
-                    <div class="question-title">自控与意志力 (WIL)</div>
+                    <div class="question-title">自控、情绪与意志力 (WIL)</div>
                     <div style="margin-bottom: 10px;">
-                        <span class="calib-label" style="font-size:0.7rem;">当你决定养成一个新习惯(锻炼/阅读等)，通常能坚持多久？</span>
-                        <div class="option-grid col-2" id="q-wil-habit">
-                            <div class="option-card selected" data-val="1">不到1周</div>
-                            <div class="option-card" data-val="2">1-4周</div>
-                            <div class="option-card" data-val="4">1-3个月</div>
-                            <div class="option-card" data-val="5">3个月以上</div>
+                        <span class="calib-label" style="font-size:0.7rem;">睡眠节律自控：是否经常“报复性熬夜”？能否到点放下手机？</span>
+                        <div class="option-grid" id="q-wil-sleep">
+                            <div class="option-card selected" data-val="0">经常熬夜，睡前必须刷手机很久</div>
+                            <div class="option-card" data-val="1">偶尔熬夜，有些许自控力</div>
+                            <div class="option-card" data-val="2">作息规律，到点能果断关灯睡觉</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">延迟满足与冲动控制：面对高热量垃圾食品/冲动消费时？</span>
+                        <div class="option-grid col-2" id="q-wil-delay">
+                            <div class="option-card selected" data-val="0">随心所欲，立刻满足</div>
+                            <div class="option-card" data-val="1">一半一半，时常破戒</div>
+                            <div class="option-card" data-val="2">大多数时候能理性克制</div>
+                            <div class="option-card" data-val="3">极强自控，严格遵循长期目标</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <span class="calib-label" style="font-size:0.7rem;">情绪韧性：遇到导致计划全盘打乱的负面事件，你恢复平静需要多久？</span>
+                        <div class="option-grid col-2" id="q-wil-emo">
+                            <div class="option-card selected" data-val="0">好几天甚至长期内耗</div>
+                            <div class="option-card" data-val="1">大概一天时间</div>
+                            <div class="option-card" data-val="2">几个小时就能调整过来</div>
+                            <div class="option-card" data-val="3">几分钟内迅速接受现实并重定计划</div>
                         </div>
                     </div>
                     <div>
-                        <span class="calib-label" style="font-size:0.7rem;">当运动或工作变得痛苦时，你通常会？</span>
+                        <span class="calib-label" style="font-size:0.7rem;">痛苦耐受度：当训练或工作遇到瓶颈、肌肉极度酸痛时？</span>
                         <div class="option-grid" id="q-wil-pain">
-                            <div class="option-card selected" data-val="1">立刻停止，逃避痛苦</div>
-                            <div class="option-card" data-val="3">偶尔能咬牙坚持一下</div>
-                            <div class="option-card" data-val="5">大多能克服阻力完成目标</div>
+                            <div class="option-card selected" data-val="0">立刻停止，逃避痛苦</div>
+                            <div class="option-card" data-val="1">能咬牙再坚持一会儿</div>
+                            <div class="option-card" data-val="2">越挫越勇，甚至享受突破极限的痛苦</div>
                         </div>
                     </div>
                 </div>
@@ -640,36 +716,19 @@
 
             <!-- STEP 3: 生活状态全局修正 -->
             <div class="calib-step" id="step-3">
-                <div class="question-card">
-                    <div class="question-title">睡眠质量 (影响所有属性)</div>
-                    <div class="option-grid col-2" id="q-mod-sleep">
-                        <div class="option-card selected" data-val="1.0">很好 (充分恢复)</div>
-                        <div class="option-card" data-val="0.95">一般 (偶尔失眠/疲惫)</div>
-                        <div class="option-card" data-val="0.90">较差 (经常睡不好)</div>
-                        <div class="option-card" data-val="0.80">很差 (严重睡眠障碍)</div>
-                    </div>
-                </div>
-
-                <div class="question-card">
-                    <div class="question-title">日常压力水平 (影响心智属性)</div>
-                    <div class="option-grid" id="q-mod-stress">
-                        <div class="option-card selected" data-val="1.0">低/适度 (感觉能掌控生活)</div>
-                        <div class="option-card" data-val="0.90">较高 (经常感到焦虑/疲惫)</div>
-                        <div class="option-card" data-val="0.80">极高 (长期处于高压/抑郁/耗竭状态)</div>
-                    </div>
-                </div>
-                
-                <div class="question-card">
-                    <div class="question-title">饮食习惯 (影响所有属性)</div>
-                    <div class="option-grid" id="q-mod-diet">
-                        <div class="option-card selected" data-val="1.0">混合饮食，比较均衡</div>
-                        <div class="option-card" data-val="0.95">经常吃外卖/快餐/高糖食品</div>
-                        <div class="option-card" data-val="1.05">严格管理，坚持健康/地中海饮食等</div>
+                <div class="question-card" style="border-color: var(--orange);">
+                    <div class="question-title" style="color: var(--orange);">近期状态波动 (Trend)</div>
+                    <div class="question-desc">决定当前状态较历史巅峰的衰减比例，防跌落深渊机制。</div>
+                    <div class="option-grid col-2" id="q-trend">
+                        <div class="option-card" data-val="1.10">状态火热，持续突破</div>
+                        <div class="option-card selected" data-val="1.0">保持平稳或稳步恢复中</div>
+                        <div class="option-card" data-val="0.90">最近比较累，训练量减少</div>
+                        <div class="option-card" data-val="0.80">完全停训、久坐或大病初愈</div>
                     </div>
                 </div>
 
                 <div class="calib-preview">
-                    <div class="calib-preview-title">=> 系统运算完毕 预估初始基线 <=</div>
+                    <div class="calib-preview-title">=> 绝对基准引擎运算完毕 <=</div>
                     <div class="calib-preview-levels">
                         <div id="preview-str">STR LV.00</div>
                         <div id="preview-con">CON LV.00</div>
@@ -1167,18 +1226,18 @@ function updateCalibrationPreview() {
     const sex = document.getElementById('q-sex').value;
     const isMale = sex === 'M';
 
-    // 1. Base Multipliers (Age & Sex)
+    // 1. Age & Sex Multipliers (only slightly adjusts the final absolute level)
     const ageCurve = (a) => {
-        if (a < 20) return 0.95;
+        if (a < 20) return 1.0;
         if (a <= 28) return 1.0;
         if (a <= 35) return 0.95;
-        if (a <= 45) return 0.85;
-        if (a <= 55) return 0.75;
-        return 0.60;
+        if (a <= 45) return 0.90;
+        if (a <= 55) return 0.85;
+        return 0.80;
     };
     let baseMult = ageCurve(age);
-    let strMult = baseMult * (isMale ? 1.0 : 0.65);
-    let conMult = baseMult * (isMale ? 1.0 : 0.75);
+    let strMult = baseMult * (isMale ? 1.0 : 0.85); // 相比旧版，女性力量折损减少，因为等效等级已经是基于客观次数了
+    let conMult = baseMult * (isMale ? 1.0 : 0.90);
 
     // 2. BMI Modifier
     const h = parseFloat(document.getElementById('q-height').value);
@@ -1186,49 +1245,61 @@ function updateCalibrationPreview() {
     let bmiMod = 1.0;
     if (h && w) {
         const bmi = w / ((h/100) * (h/100));
-        const strFreq = getSelectedVal('q-str-freq');
         if (bmi < 18.5) bmiMod = 0.95;
-        else if (bmi >= 25 && bmi < 30) bmiMod = strFreq > 1 ? 1.0 : 0.95; 
-        else if (bmi >= 30) bmiMod = strFreq > 1 ? 0.95 : 0.85; 
+        else if (bmi >= 25 && bmi < 30) bmiMod = 0.95; 
+        else if (bmi >= 30) bmiMod = 0.85; 
     }
-    
-    // 3. Extract Questionnaire Scores
-    // STR: max depends on years of experience, current frequency provides the foundation
-    const strYears = getSelectedVal('q-str-years'); // 0, 1, 3, 5
-    const strFreq = getSelectedVal('q-str-freq'); // 0, 1, 3, 5
-    let strRaw = 1 + (strYears * 2) + strFreq; // Range 1 to 16
-    
-    // CON: max continuous distance
-    const conDist = getSelectedVal('q-con-dist'); // 0, 1, 5, 10
-    let conRaw = 1 + (conDist * 1.5); // Range 1 to 16
-    
-    // Trend modifier (Historical Decay)
-    const trendMod = getSelectedVal('q-trend'); // 0.7, 0.85, 1.0, 1.05
-    
-    // FOC: time vs doomscroll
-    const focTime = getSelectedVal('q-foc-time'); // 1, 2, 3, 5
-    const focDoom = getSelectedVal('q-foc-doom'); // 0, 1, 3, 5
-    let focRaw = 1 + (focTime * 2) + focDoom; // Range 1 to 16
-    
-    // WIL: habit vs pain
-    const wilHabit = getSelectedVal('q-wil-habit'); // 1, 2, 4, 5
-    const wilPain = getSelectedVal('q-wil-pain'); // 1, 3, 5
-    let wilRaw = 1 + (wilHabit * 2) + (wilPain * 1.2); // Range 1 to 17
-    
-    // 4. Global Modifiers
-    const modSleep = getSelectedVal('q-mod-sleep');
-    const modStress = getSelectedVal('q-mod-stress');
-    const modDiet = getSelectedVal('q-mod-diet');
 
-    // 5. Final Calculation
+    // 字典映射：将选项 index (0,1,2,3) 映射为绝对的 Level (等效 XP 等级)
+    // 根据设计：LV1(极弱), LV5(入门), LV10(中级), LV15(高级), LV20(精英)
+    const mapLevel = (val, mapping) => mapping[val] || mapping[0];
+
+    // --- STR ---
+    const strHistoryLvl = mapLevel(getSelectedVal('q-str-history'), {0: 1, 1: 5, 2: 10});
+    const strPushLvl = mapLevel(getSelectedVal('q-str-push'), {0: 2, 1: 5, 2: 12, 3: 18});
+    const strPullLvl = mapLevel(getSelectedVal('q-str-pull'), {0: 2, 1: 6, 2: 12, 3: 18});
+    const strCoreLvl = mapLevel(getSelectedVal('q-str-core'), {0: 2, 1: 5, 2: 10, 3: 15});
+    const strLegLvl  = mapLevel(getSelectedVal('q-str-leg'), {0: 2, 1: 6, 2: 12, 3: 18});
+    
+    // STR 等级融合：各肌群加权平均，如果历史底蕴更高，则给予保底修正
+    let strRawLvl = (strPushLvl * 0.3) + (strPullLvl * 0.3) + (strLegLvl * 0.25) + (strCoreLvl * 0.15);
+    if (strHistoryLvl > strRawLvl) {
+        strRawLvl = (strRawLvl + strHistoryLvl) / 2; // 历史记忆保底
+    }
+
+    // --- CON ---
+    const conRhrLvl  = mapLevel(getSelectedVal('q-con-rhr'), {0: 2, 1: 6, 2: 12, 3: 18});
+    const conVo2Lvl  = mapLevel(getSelectedVal('q-con-vo2'), {0: 2, 1: 6, 2: 12, 3: 18});
+    const conNeatLvl = mapLevel(getSelectedVal('q-con-neat'), {0: 2, 1: 5, 2: 9, 3: 15});
+    const conBfLvl   = mapLevel(getSelectedVal('q-con-bf'), {0: 2, 1: 5, 2: 10, 3: 15});
+    let conRawLvl = (conVo2Lvl * 0.4) + (conRhrLvl * 0.3) + (conNeatLvl * 0.2) + (conBfLvl * 0.1);
+
+    // --- FOC ---
+    const focDeepLvl = mapLevel(getSelectedVal('q-foc-deep'), {0: 2, 1: 6, 2: 12, 3: 18});
+    const focResistLvl = mapLevel(getSelectedVal('q-foc-resist'), {0: 2, 1: 8, 2: 15});
+    const focReadLvl = mapLevel(getSelectedVal('q-foc-read'), {0: 2, 1: 5, 2: 10, 3: 16});
+    const focDoomLvl = mapLevel(getSelectedVal('q-foc-doom'), {0: 2, 1: 6, 2: 12, 3: 18});
+    let focRawLvl = (focDeepLvl * 0.4) + (focDoomLvl * 0.3) + (focResistLvl * 0.15) + (focReadLvl * 0.15);
+
+    // --- WIL ---
+    const wilSleepLvl = mapLevel(getSelectedVal('q-wil-sleep'), {0: 2, 1: 7, 2: 14});
+    const wilDelayLvl = mapLevel(getSelectedVal('q-wil-delay'), {0: 2, 1: 6, 2: 12, 3: 18});
+    const wilEmoLvl   = mapLevel(getSelectedVal('q-wil-emo'), {0: 2, 1: 6, 2: 12, 3: 18});
+    const wilPainLvl  = mapLevel(getSelectedVal('q-wil-pain'), {0: 2, 1: 8, 2: 15});
+    let wilRawLvl = (wilDelayLvl * 0.3) + (wilEmoLvl * 0.3) + (wilPainLvl * 0.25) + (wilSleepLvl * 0.15);
+
+    // 3. Trend Modifier (Recent status)
+    const trendMod = getSelectedVal('q-trend') || 1.0; 
+
+    // 4. Final Calculation
     const MAX_LEVEL = 22;
     
-    let strLvl = Math.round((strRaw / 16) * MAX_LEVEL * strMult * trendMod * modSleep * modDiet * bmiMod);
-    let conLvl = Math.round((conRaw / 16) * MAX_LEVEL * conMult * trendMod * modSleep * modDiet * bmiMod);
-    let focLvl = Math.round((focRaw / 16) * MAX_LEVEL * baseMult * modSleep * modStress * modDiet);
-    let wilLvl = Math.round((wilRaw / 17) * MAX_LEVEL * baseMult * modSleep * modStress * modDiet);
+    let strLvl = Math.round(strRawLvl * strMult * trendMod * bmiMod);
+    let conLvl = Math.round(conRawLvl * conMult * trendMod * bmiMod);
+    let focLvl = Math.round(focRawLvl * baseMult * trendMod); // 专注力也会受近期状态波动影响
+    let wilLvl = Math.round(wilRawLvl * baseMult * trendMod);
 
-    const clamp = (val) => Math.max(1, Math.min(MAX_LEVEL, val));
+    const clamp = (val) => Math.max(1, Math.min(MAX_LEVEL, Math.round(val)));
     strLvl = clamp(strLvl);
     conLvl = clamp(conLvl);
     focLvl = clamp(focLvl);
