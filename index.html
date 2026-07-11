@@ -611,13 +611,15 @@
     <div class="card" id="card-calendar">
         <div class="section">
             <!-- HP Status (compact) -->
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                <div style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">HP</div>
-                <span id="ui-hp-val" style="font-size: 1.8rem; font-weight: bold;">--%</span>
-                <span id="ui-hp-status" style="display:none;"></span>
-                <div class="hp-bar-row" style="flex: 1; margin-bottom: 0;">
-                    <div class="progress-bg" style="max-width: 100%;"><div class="progress-fill" id="hp-fill" style="width: 0%; background-color: var(--green);"></div></div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 0.75rem; color: var(--text-dim); font-weight: bold;">HP</div>
+                    <span id="ui-hp-val" style="font-size: 1.8rem; font-weight: bold;">--%</span>
+                    <div class="hp-bar-row" style="flex: 1; margin-bottom: 0;">
+                        <div class="progress-bg" style="max-width: 100%;"><div class="progress-fill" id="hp-fill" style="width: 0%; background-color: var(--green);"></div></div>
+                    </div>
                 </div>
+                <div id="ui-hp-status" style="display:none; flex-wrap:wrap; gap:6px; margin-top:2px;"></div>
             </div>
 
             <!-- Calendar -->
@@ -1568,6 +1570,7 @@ function renderVitalsUI() {
         statusContainer.style.display = 'flex';
         statusContainer.style.gap = '6px';
         statusContainer.style.alignItems = 'center';
+        statusContainer.style.flexWrap = 'wrap';
         statusContainer.className = '';
         badges.forEach(b => {
             const span = document.createElement('span');
