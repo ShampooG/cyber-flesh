@@ -88,6 +88,12 @@
         .btn-danger { background-color: transparent; color: var(--orange); border: 1px solid var(--orange); }
         .btn-danger:hover { background-color: var(--orange); color: white; }
 
+        
+        button:focus-visible, input:focus-visible, select:focus-visible, .calendar-cell:focus-visible, .nav-item:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
         /* ===== Card ===== */
         .card {
             background: var(--bg-panel);
@@ -117,7 +123,7 @@
         .calibration-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(245,247,250,0.85);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             z-index: 2000;
             display: flex; flex-direction: column;
             padding: 20px;
@@ -207,7 +213,8 @@
         .btn-toxic:hover { background: var(--orange); color: white; }
 
         /* ===== Plus Button (Calendar corner) ===== */
-        .btn-add-xp { display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--primary-dim); color: var(--primary); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s; vertical-align: middle;}
+        .btn-add-xp { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--primary-dim); color: var(--primary); font-weight: bold; cursor: pointer; font-size: 14px; transition: all 0.2s; vertical-align: middle;}
+        .btn-add-xp::after { content: ""; position: absolute; top: -11px; bottom: -11px; left: -11px; right: -11px; }
         .btn-add-xp:hover { background: var(--primary); color: white; transform: scale(1.1); }
         
         .btn-cal-add {
@@ -215,14 +222,16 @@
             border-radius: 50%; background: var(--primary); color: white;
             font-weight: 500; cursor: pointer; font-size: 20px; border: none;
             transition: all 0.2s; padding: 0; box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3);
+            position: relative;
         }
+        .btn-cal-add::after { content: ""; position: absolute; top: -6px; bottom: -6px; left: -6px; right: -6px; }
         .btn-cal-add:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4); }
         .btn-cal-add:active { transform: scale(0.95); }
 
         /* ===== Record Modal Overlay ===== */
         .record-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             z-index: 3000; display: none; align-items: center; justify-content: center;
             padding: 16px; opacity: 0; transition: opacity 0.3s;
         }
@@ -239,12 +248,14 @@
             background: var(--bg); border: none; border-radius: 50%;
             width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
             color: var(--text-hint); cursor: pointer; font-size: 1.2rem; transition: all 0.2s;
+            position: absolute;
         }
+        .modal-close-btn::after { content: ""; position: absolute; top: -7px; bottom: -7px; left: -7px; right: -7px; }
         .modal-close-btn:hover { background: var(--panel-border); color: var(--text-main); }
         
         /* ===== FAB (AI Button) ===== */
         .fab-ai {
-            position: fixed; bottom: 24px; right: 24px;
+            position: fixed; bottom: calc(85px + env(safe-area-inset-bottom)); right: 24px;
             width: 56px; height: 56px;
             background: linear-gradient(135deg, var(--cyan), #0071E3);
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -379,14 +390,14 @@
             max-width: 90vw; width: max-content; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             z-index: 9999; opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none; text-align: left; line-height: 1.5;
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-weight: 500;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font-weight: 500;
         }
         #global-toast.show { bottom: 32px; opacity: 1; }
 
         /* ===== Confirm Overlay ===== */
         .confirm-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 1000; justify-content: center; align-items: center;
         }
         .confirm-overlay.active { display: flex; }
         .confirm-box { border: none; background: var(--bg-panel); padding: 32px; max-width: 400px; width: 90%; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);}
@@ -440,7 +451,7 @@
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             height: 65px; background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid var(--panel-border);
             display: flex; justify-content: space-around; align-items: center;
             z-index: 1000; padding-bottom: env(safe-area-inset-bottom);
@@ -665,10 +676,10 @@
         </div>
     </div>
     <!-- ===== PAGES CONTAINER ===== -->
-    <div id="page-home" class="page-view active">
+    <main id="page-home" class="page-view active">
         <!-- Morning Check-in Card -->
         <div id="morning-checkin-card" class="card" style="display: none; background: linear-gradient(135deg, var(--bg-panel), var(--bg)); border: 1px solid var(--primary); box-shadow: 0 4px 12px var(--primary-dim); animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
-            <div class="section" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+            <section class="section" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-bottom: 4px;">早安！☀️</div>
@@ -679,12 +690,12 @@
                     <button class="btn-danger" style="padding: 8px 16px; font-size: 0.85rem; border: none; background: transparent; color: var(--text-hint);" onclick="dismissMorningCard()">稍后</button>
                     <button class="btn-primary" style="padding: 8px 20px; font-size: 0.85rem; font-weight: 600;" onclick="openVitalsRecord()">立即记录</button>
                 </div>
-            </div>
+            </section>
         </div>
 
         <!-- ===== SECTION 1: CALENDAR + VITALS + RECORD ===== -->
         <div class="card" id="card-calendar">
-        <div class="section">
+        <section class="section">
             <!-- HP Status (compact) -->
             <div id="hp-status-area" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.2s;" onclick="openVitalsRecord()" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='none'" title="点击记录生命体征">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -736,22 +747,22 @@
             <div class="heatmap-detail" id="heatmap-detail" style="display: block; border-color: var(--border);"></div>
 
 
-        </div>
+        </section>
     </div>
 
     <!-- ===== SECTION 2: ATTRIBUTES ===== -->
     <div class="card" id="card-attributes">
-        <div class="section" id="attributes-container" style="margin-bottom: 0;">
+        <section class="section" id="attributes-container" style="margin-bottom: 0;">
             <!-- JS Generated -->
-        </div>
+        </section>
     </div>
 
-    </div> <!-- END page-home -->
+    </main> <!-- END page-home -->
 
-    <div id="page-stats" class="page-view">
+    <main id="page-stats" class="page-view">
         <!-- ===== SECTION 2.5: DASHBOARD & ANALYTICS ===== -->
         <div class="card" id="card-dashboard">
-            <div class="section">
+            <section class="section">
                 <div class="section-title">数据概览 (Data Dashboard)</div>
                 <!-- Row 1: Key Metrics -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
@@ -795,35 +806,35 @@
                         暂无最新评估。点击按钮让 AI 分析你近期的综合表现与建议。
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
 
         <div class="card" id="card-analytics">
-            <div class="section">
+            <section class="section">
             <div class="section-title">数据分析趋势 <span style="font-size:0.75rem; color:var(--text-hint); font-weight:normal;">近30天</span></div>
             <div style="position: relative; height: 200px; width: 100%;">
                 <canvas id="analytics-chart"></canvas>
             </div>
-            </div>
+            </section>
         </div>
 
         <!-- ===== SECTION 3: LOGS (Moved to Stats) ===== -->
         <div class="card" id="card-logs">
-            <div class="section" id="oracle-log-section">
+            <section class="section" id="oracle-log-section">
                 <div class="oracle-header">
                     <div class="section-title" style="margin-bottom: 0;">系统日志 (System Logs)</div>
                 </div>
                 <div id="oracle-log">
                     <div>> 系统初始化完成。V6 版本已就绪。</div>
                 </div>
-            </div>
+            </section>
         </div>
-    </div> <!-- END page-stats -->
+    </main> <!-- END page-stats -->
 
-    <div id="page-mine" class="page-view">
+    <main id="page-mine" class="page-view">
         <!-- ===== SECTION 4: SETTINGS ===== -->
         <div class="card" id="card-settings">
-            <div class="section">
+            <section class="section">
                 <div class="section-title">系统管理 (Settings)</div>
                 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
@@ -852,9 +863,9 @@
                     </div>
                     <button id="btn-save-settings" style="width: 100%; margin-top: 5px;" class="btn-primary">[ 保存配置 ]</button>
                 </div>
-            </div>
+            </section>
         </div>
-    </div> <!-- END page-mine -->
+    </main> <!-- END page-mine -->
 
     <!-- ===== BOTTOM NAVIGATION ===== -->
     <nav class="bottom-nav">
@@ -937,7 +948,7 @@
     </div>
 
     <!-- FAB Button -->
-    <div class="fab-ai" onclick="toggleAiOverlay()" title="AI 快速记录">🤖</div>
+    <button class="fab-ai" onclick="toggleAiOverlay()" title="AI 快速记录" aria-label="AI 快速记录">🤖</button>
 
 <script>
 /**
@@ -1742,8 +1753,8 @@ function renderStatsDashboard() {
                 " 
                 title="${TIER_DESCS[key][i]}" 
                 onclick="document.getElementById('desc-${key}').innerText = '【${TIER_LABELS[i]}】 ${safeDesc}';">
-                    <span style="font-size:0.58rem; color:${isActive ? color : 'var(--text-hint)'}; font-weight:${isActive ? '700' : '400'}; opacity:${isPast || isActive ? '1' : '0.4'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 2px; pointer-events:none;">
-                        ${TIER_LABELS[i]}
+                    <span style="font-size:0.65rem; color:${isActive ? color : 'var(--text-hint)'}; font-weight:${isActive ? '800' : '500'}; opacity:${isPast || isActive ? '1' : '0.4'}; white-space:nowrap; pointer-events:none; font-family:var(--font-mono);">
+                        ${['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'][i]}
                     </span>
                 </div>`;
                 
@@ -2171,10 +2182,12 @@ function renderHeatmap() {
         logsByDay[mid].push(log);
     });
 
+    const fragment = document.createDocumentFragment();
+
     for (let i = 0; i < startOffset; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'calendar-cell empty';
-        grid.appendChild(emptyCell);
+        fragment.appendChild(emptyCell);
     }
     
     for (let day = 1; day <= daysInMonth; day++) {
@@ -2210,7 +2223,7 @@ function renderHeatmap() {
             }
         });
 
-        const cell = document.createElement('div');
+        const cell = document.createElement('button');
         let hpClass = '';
         if (dayHp !== null) {
             hpClass = dayHp >= 80 ? 'hp-high' : (dayHp < 40 ? 'hp-low' : 'hp-mid');
@@ -2266,9 +2279,11 @@ function renderHeatmap() {
         
         const dateStr = `${month+1}/${day}`;
         cell.setAttribute('data-tip', `${dateStr} : +${Math.floor(totalXpGain)} / -${Math.floor(totalXpLoss)} XP`);
+        cell.setAttribute('aria-label', `${dateStr} : +${Math.floor(totalXpGain)} / -${Math.floor(totalXpLoss)} XP`);
         
         if (dMid > todayMid) {
             cell.classList.add('future');
+            cell.disabled = true;
         } else {
             cell.onclick = () => {
                 window.selectedHeatmapDate = dMid;
@@ -2276,12 +2291,14 @@ function renderHeatmap() {
             };
         }
         
-        grid.appendChild(cell);
+        fragment.appendChild(cell);
         
         if (selectedDateMs === dMid) {
             renderHeatmapDetail(dMid, dayLogs, dateStr, dMid === todayMid);
         }
     }
+
+    grid.appendChild(fragment);
     
     if (new Date(selectedDateMs).getMonth() !== month || new Date(selectedDateMs).getFullYear() !== year) {
         const d = new Date(selectedDateMs);
