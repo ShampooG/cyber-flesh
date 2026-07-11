@@ -245,14 +245,14 @@
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 600; }
         .calendar-nav-btn { cursor: pointer; background: var(--bg); border: none; color: var(--text-main); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; transition: background 0.2s;}
         .calendar-nav-btn:hover { background: var(--panel-border); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 12px;}
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px;}
         .calendar-day-header { text-align: center; font-size: 0.75rem; color: var(--text-hint); padding-bottom: 8px; font-weight: 500;}
         .calendar-cell { 
             border-radius: 8px; background-color: var(--bg);
             cursor: pointer; transition: all 0.2s; border: 2px solid transparent; 
             display: flex; flex-direction: column; justify-content: space-between;
             padding: 6px; font-size: 0.75rem; color: var(--text-hint);
-            min-height: 70px;
+            min-height: 70px; min-width: 0;
         }
         .calendar-cell.empty { background-color: transparent; border-color: transparent; cursor: default; }
         .calendar-cell:not(.empty):hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -264,8 +264,17 @@
         .calendar-cell.level-4 { background-color: #1E88E5; }
         .calendar-cell.level-4 .cell-date, .calendar-cell.level-4 .cell-hp { color: #fff !important; }
         .calendar-cell.level-4 .xp-gain { color: #fff; }
-        .calendar-cell.today { border: 2px solid var(--green); }
-        .calendar-cell.today .cell-date { color: var(--green); font-weight: 800; }
+        .calendar-cell.today { border: 2px solid transparent; }
+        .calendar-cell.today .cell-date { 
+            background-color: var(--green); 
+            color: white !important; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
         .calendar-cell.today.active { border: 2px solid var(--green); box-shadow: 0 8px 16px rgba(52,199,89,0.15); }
         .calendar-cell.toxic { border: 2px solid var(--orange) !important; animation: pulse 2s infinite; }
 
@@ -278,9 +287,9 @@
         .hp-mid { color: var(--text-hint); border: 1px solid var(--text-hint); }
         .hp-low { color: var(--orange); border: 1px solid var(--orange); }
 
-        .cell-xp-row { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.75rem; font-variant-numeric: tabular-nums; line-height: 1.3; margin-top: auto; font-weight: 500;}
-        .xp-gain { color: var(--primary); }
-        .xp-loss { color: var(--orange); }
+        .cell-xp-row { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.75rem; font-variant-numeric: tabular-nums; line-height: 1.3; margin-top: auto; font-weight: 500; min-width: 0; width: 100%;}
+        .xp-gain { color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .xp-loss { color: var(--orange); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
         .heatmap-detail { background: var(--bg); border: 1px solid var(--panel-border); padding: 16px; border-radius: 12px; font-size: 0.9rem; margin-top: 16px;}
         .heatmap-detail-title { font-weight: 600; margin-bottom: 12px; color: var(--text-main); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center;}
@@ -1289,37 +1298,45 @@ function syncVitals() {
     const score_rem = Math.min(remMins / 100.0, 1.0);
     const sleepMod = (score_total * 0.4) + (score_deep * 0.3) + (score_rem * 0.3);
     
-    DB.current_hp = Math.max(0, Math.min(150, Math.round(readiness * sleepMod)));
-    DB.current_buff = DB.current_hp >= 80 ? 1.2 : 1.0;
+    const computedHp = Math.max(0, Math.min(150, Math.round(readiness * sleepMod)));
+    const computedBuff = computedHp >= 80 ? 1.2 : 1.0;
     
-    DB.current_debuffs = [];
+    let computedDebuffs = [];
     
     // 1. 数据悖论判定: 睡眠充足，但HRV极差、RHR极高 -> 系统性炎症/免疫应激
     if (score_total >= 0.9 && hrvDiff <= -0.15 && rhrDiff <= -0.1) {
-        DB.current_debuffs.push('SYSTEMIC_INFLAMMATION');
+        computedDebuffs.push('SYSTEMIC_INFLAMMATION');
     } else if (score_total < 0.6) {
         // 2. 睡眠剥夺霸权覆盖
-        DB.current_debuffs.push('SLEEP_DEPRIVATION');
+        computedDebuffs.push('SLEEP_DEPRIVATION');
     } else {
         // 只有未触发极度危机时，才会计算正面 Buff
-        if (hrvDiff > 0.1 && rhrDiff > 0.05 && score_total > 0.8) DB.current_debuffs.push('FLOW_STATE');
-        if (score_deep > 0.9 && score_rem > 0.9) DB.current_debuffs.push('COGNITIVE_RESERVE');
+        if (hrvDiff > 0.1 && rhrDiff > 0.05 && score_total > 0.8) computedDebuffs.push('FLOW_STATE');
+        if (score_deep > 0.9 && score_rem > 0.9) computedDebuffs.push('COGNITIVE_RESERVE');
     }
 
     // 身心解耦的负面状态：即时在非危机状态下也可能因为结构失衡出现，但在危机下必然叠加出现
-    if (hrvDiff < -0.15 && rhrDiff < -0.1) DB.current_debuffs.push('SYMPATHETIC_OVERDRIVE');
-    if (score_deep >= 0.8 && score_rem <= 0.6) DB.current_debuffs.push('BRAIN_FOG');
-    if (score_rem >= 0.8 && score_deep <= 0.6) DB.current_debuffs.push('MUSCLE_FATIGUE');
+    if (hrvDiff < -0.15 && rhrDiff < -0.1) computedDebuffs.push('SYMPATHETIC_OVERDRIVE');
+    if (score_deep >= 0.8 && score_rem <= 0.6) computedDebuffs.push('BRAIN_FOG');
+    if (score_rem >= 0.8 && score_deep <= 0.6) computedDebuffs.push('MUSCLE_FATIGUE');
 
     const actionTime = window.selectedHeatmapDate || Date.now();
     const dMid = getMidnight(new Date(actionTime));
+    const isToday = dMid === getMidnight(new Date());
+
+    if (isToday) {
+        DB.current_hp = computedHp;
+        DB.current_buff = computedBuff;
+        DB.current_debuffs = computedDebuffs;
+    }
+
     DB.action_log = DB.action_log.filter(l => !(l.type === 'VITALS' && getMidnight(new Date(l.t)) === dMid));
     
     const sleepStr = `${th}h${tm}m|D:${dh}h${dm}m|R:${rh}h${rm}m`;
     DB.action_log.push({
         id: 'vitals_' + Date.now(),
         type: 'VITALS',
-        hp: DB.current_hp,
+        hp: computedHp,
         attrs: ['SYS'],
         xp: 0,
         desc: `状态同步 (Sleep:${sleepStr} HRV:${hrv} RHR:${rhr})`,
@@ -1332,7 +1349,11 @@ function syncVitals() {
     });
 
     saveData(); renderVitalsUI(); renderHeatmap();
-    logOracle(`> HP: ${DB.current_hp}% | BUFF: x${DB.current_buff.toFixed(1)}`);
+    if (isToday) {
+        logOracle(`> HP: ${DB.current_hp}% | BUFF: x${DB.current_buff.toFixed(1)}`);
+    } else {
+        logOracle(`> 补录昨日体征 (不覆盖今日状态)`);
+    }
 }
 
 // ===== 行为录入 (Inline) =====
