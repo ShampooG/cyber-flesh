@@ -245,43 +245,36 @@
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 600; }
         .calendar-nav-btn { cursor: pointer; background: var(--bg); border: none; color: var(--text-main); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; transition: background 0.2s;}
         .calendar-nav-btn:hover { background: var(--panel-border); }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px;}
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px;}
         .calendar-day-header { text-align: center; font-size: 0.75rem; color: var(--text-hint); padding-bottom: 8px; font-weight: 500;}
         .calendar-cell { 
-            border-radius: 8px; background-color: var(--bg);
+            position: relative; overflow: hidden;
+            border-radius: 6px; background-color: var(--bg);
             cursor: pointer; transition: all 0.2s; border: 2px solid transparent; 
-            display: flex; flex-direction: column; justify-content: space-between;
-            padding: 6px; font-size: 0.75rem; color: var(--text-hint);
-            min-height: 70px; min-width: 0;
+            aspect-ratio: 1 / 1; min-height: unset; padding: 0;
+            font-size: 0.9rem; color: var(--text-hint);
         }
         .calendar-cell.empty { background-color: transparent; border-color: transparent; cursor: default; }
-        .calendar-cell:not(.empty):hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .calendar-cell.active { border-color: var(--primary); transform: translateY(-2px); z-index: 2; box-shadow: 0 8px 16px rgba(0,113,227,0.15); font-weight: 600; color: var(--text-main); background: var(--bg-panel);}
+        .calendar-cell:not(.empty):hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-color: var(--border); }
+        .calendar-cell.active { border-color: var(--text-main); transform: translateY(-2px); z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 700; color: var(--text-main); }
         
-        .calendar-cell.level-1 { background-color: #E3F2FD; }
-        .calendar-cell.level-2 { background-color: #90CAF9; }
-        .calendar-cell.level-3 { background-color: #42A5F5; }
-        .calendar-cell.level-4 { background-color: #1E88E5; }
-        .calendar-cell.level-4 .cell-date, .calendar-cell.level-4 .cell-hp { color: #fff !important; }
-        .calendar-cell.level-4 .xp-gain { color: #fff; }
+        .calendar-cell.hp-high { background-color: #DCFCE7; color: #166534; }
+        .calendar-cell.hp-mid { background-color: #FEF9C3; color: #854D0E; }
+        .calendar-cell.hp-low { background-color: #FEE2E2; color: #991B1B; }
+        .calendar-cell.future { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
         .calendar-cell.today { border: 2px solid transparent; }
         .calendar-cell.today .cell-date { 
-            background-color: var(--green); 
-            color: white !important; 
-            border-radius: 50%; 
-            width: 20px; 
-            height: 20px; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
+            color: var(--green) !important; 
+            font-weight: 800;
+            opacity: 1;
         }
-        .calendar-cell.today.active { border: 2px solid var(--green); box-shadow: 0 8px 16px rgba(52,199,89,0.15); }
+        .calendar-cell.today.active { border-color: var(--text-main); }
         .calendar-cell.toxic { border: 2px solid var(--orange) !important; animation: pulse 2s infinite; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
 
         .cell-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-        .cell-date { font-weight: 600; color: var(--text-main); font-size: 0.85rem; }
+        .cell-date { font-weight: 700; color: var(--text-hint); font-size: 0.75rem; font-variant-numeric: tabular-nums; position: absolute; top: 4px; left: 4px; z-index: 10; line-height: 1; opacity: 0.8; }
         .cell-hp { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: 600; background: var(--bg-panel); }
         .hp-high { color: var(--green); border: 1px solid var(--green); }
         .hp-mid { color: var(--text-hint); border: 1px solid var(--text-hint); }
@@ -639,6 +632,27 @@
             </div>
             <div class="calendar-grid" id="calendar-grid">
                 <!-- JS Generated -->
+            </div>
+            
+            <!-- Calendar Legend -->
+            <div class="calendar-legend" style="display:flex; flex-direction:column; gap:6px; padding: 4px 4px 12px; font-size: 0.65rem; color: var(--text-hint);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><strong style="color:var(--text-dim);">圆环 (XP)</strong></span>
+                    <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px;">
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#FF3154;"></span> STR</span>
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#FFCC00;"></span> CON</span>
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#00C7FF;"></span> FOC</span>
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#BF5AF2;"></span> WIL</span>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><strong style="color:var(--text-dim);">底色 (HP)</strong></span>
+                    <div style="display:flex; gap:8px;">
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:10px; height:8px; border-radius:2px; background:#DCFCE7;"></span> 极佳(≥80)</span>
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:10px; height:8px; border-radius:2px; background:#FEF9C3;"></span> 良好</span>
+                        <span style="display:flex; align-items:center; gap:2px;"><span style="display:inline-block; width:10px; height:8px; border-radius:2px; background:#FEE2E2;"></span> 高危(&lt;40)</span>
+                    </div>
+                </div>
             </div>
             
             <!-- Heatmap Detail -->
@@ -1200,6 +1214,7 @@ function loadData() {
     if (!DB.action_log) DB.action_log = [];
     if (!DB.vitals_ema) DB.vitals_ema = { sleep_ema: null, hrv_ema: null, rhr_ema: null, count: 0 };
     if (DB.current_hp === undefined) DB.current_hp = 100;
+    if (!DB.current_debuffs) DB.current_debuffs = [];
 }
 
 // ===== Calibration UI 逻辑 =====
@@ -1716,6 +1731,7 @@ function renderHeatmap() {
         const dMid = getMidnight(d);
         const dayLogs = logsByDay[dMid] || [];
         
+        let xpByAttr = { STR: 0, CON: 0, FOC: 0, WIL: 0 };
         let totalXpGain = 0;
         let totalXpLoss = 0;
         let dayHp = null;
@@ -1731,52 +1747,83 @@ function renderHeatmap() {
             } else if (l.type === 'DECAY') {
                 totalXpLoss += Math.abs(l.xp);
             } else {
-                if (l.xp >= 0) totalXpGain += l.xp;
+                if (l.xp >= 0) {
+                    totalXpGain += l.xp;
+                    if (l.type === 'COMMIT' && l.attrs && l.attrs.length > 0) {
+                        l.attrs.forEach(attr => {
+                            if (xpByAttr[attr] !== undefined) xpByAttr[attr] += (l.xp / l.attrs.length);
+                        });
+                    }
+                }
                 else totalXpLoss += Math.abs(l.xp);
             }
         });
 
         const cell = document.createElement('div');
-        cell.className = 'calendar-cell tip';
-        
-        let hpHtml = '';
+        let hpClass = '';
         if (dayHp !== null) {
-            let hpClass = dayHp >= 80 ? 'hp-high' : (dayHp < 40 ? 'hp-low' : 'hp-mid');
-            hpHtml = `<div class="cell-hp ${hpClass}">${Math.floor(dayHp)}</div>`;
+            hpClass = dayHp >= 80 ? 'hp-high' : (dayHp < 40 ? 'hp-low' : 'hp-mid');
         }
         
-        let xpGainStr = totalXpGain > 0 ? `<div class="xp-gain">+${Math.floor(totalXpGain)}</div>` : ``;
-        let xpLossStr = totalXpLoss > 0 ? `<div class="xp-loss">-${Math.floor(totalXpLoss)}</div>` : ``;
+        let xpBarHtml = '';
+        if (totalXpGain > 0) {
+            let ringsHtml = '';
+            const maxPerAttr = 60; // 60 XP (~1hr MED) max per ring
+            const attrsConf = [
+                { id: 'STR', color: '#FF3154', r: 40 }, // Neon Red
+                { id: 'CON', color: '#FFCC00', r: 30 }, // Neon Yellow
+                { id: 'FOC', color: '#00C7FF', r: 20 }, // Neon Cyan
+                { id: 'WIL', color: '#BF5AF2', r: 10 }  // Neon Purple
+            ];
+            
+            let hasAttrXp = false;
+            attrsConf.forEach(conf => {
+                let xp = xpByAttr[conf.id];
+                if (xp > 0) hasAttrXp = true;
+                
+                let pct = Math.min(100, (xp / maxPerAttr) * 100);
+                let c = 2 * Math.PI * conf.r;
+                let offset = c * (1 - pct/100);
+                
+                ringsHtml += `<circle cx="50" cy="50" r="${conf.r}" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="8"></circle>`;
+                if (pct > 0) {
+                    ringsHtml += `<circle cx="50" cy="50" r="${conf.r}" fill="none" stroke="${conf.color}" stroke-width="8" stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round" transform="rotate(-90 50 50)"></circle>`;
+                }
+            });
+            
+            if (!hasAttrXp) {
+                let pct = Math.min(100, (totalXpGain / 100) * 100);
+                let c = 2 * Math.PI * 40;
+                let offset = c * (1 - pct/100);
+                ringsHtml = `
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="8"></circle>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--primary)" stroke-width="8" stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round" transform="rotate(-90 50 50)"></circle>
+                `;
+            }
+            xpBarHtml = `<svg viewBox="0 0 100 100" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -45%); width:80%; height:80%; pointer-events:none;">${ringsHtml}</svg>`;
+        }
 
-        cell.innerHTML = `
-            <div class="cell-header">
-                <div class="cell-date">${day}</div>
-                ${hpHtml}
-            </div>
-            <div class="cell-xp-row">
-                ${xpGainStr}
-                ${xpLossStr}
-            </div>
-        `;
-        
-        let levelClass = '';
-        if (totalXpGain >= 100) levelClass = 'level-4';
-        else if (totalXpGain >= 50) levelClass = 'level-3';
-        else if (totalXpGain >= 20) levelClass = 'level-2';
-        else if (totalXpGain > 0) levelClass = 'level-1';
-        
-        if (levelClass) cell.classList.add(levelClass);
+        cell.className = `calendar-cell tip ${hpClass}`;
         if (hasToxic) cell.classList.add('toxic');
         if (dMid === todayMid) cell.classList.add('today');
         if (selectedDateMs === dMid) cell.classList.add('active');
+
+        cell.innerHTML = `
+            ${xpBarHtml}
+            <div class="cell-date">${day}</div>
+        `;
         
         const dateStr = `${month+1}/${day}`;
         cell.setAttribute('data-tip', `${dateStr} : +${Math.floor(totalXpGain)} / -${Math.floor(totalXpLoss)} XP`);
         
-        cell.onclick = () => {
-            window.selectedHeatmapDate = dMid;
-            renderHeatmap(); 
-        };
+        if (dMid > todayMid) {
+            cell.classList.add('future');
+        } else {
+            cell.onclick = () => {
+                window.selectedHeatmapDate = dMid;
+                renderHeatmap(); 
+            };
+        }
         
         grid.appendChild(cell);
         
