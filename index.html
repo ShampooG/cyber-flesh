@@ -623,7 +623,6 @@
             </div>
 
             <!-- Calendar -->
-            <div id="day-context-title" style="font-weight: bold; color: var(--green); font-size: 0.8rem; margin-bottom: 8px;"></div>
             <div class="calendar-header">
                 <button class="calendar-nav-btn" id="cal-prev" onclick="changeMonth(-1)">◀ 上月</button>
                 <span id="cal-month-label" style="font-size: 0.8rem; color: var(--green);">YYYY - MM</span>
@@ -1688,7 +1687,7 @@ function renderHeatmap() {
     
     let selectedDateMs = window.selectedHeatmapDate || todayMid;
     const sDate = new Date(selectedDateMs);
-    document.getElementById('day-context-title').innerText = `/// I/O & MEMORY: ${sDate.getFullYear()}-${(sDate.getMonth()+1).toString().padStart(2,'0')}-${sDate.getDate().toString().padStart(2,'0')}`;
+
     
     const year = currentCalDate.getFullYear();
     const month = currentCalDate.getMonth();
