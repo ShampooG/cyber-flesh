@@ -279,6 +279,66 @@
         /* ===== Monthly Calendar ===== */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 600; }
         .calendar-nav-btn { cursor: pointer; background: var(--bg); border: none; color: var(--text-main); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; transition: background 0.2s;}
+        .settings-field input { border-radius: 6px; padding: 8px 12px; }
+
+        /* ===== Habits / Routines ===== */
+        #habits-container::-webkit-scrollbar { display: none; }
+        #habits-container { -ms-overflow-style: none; scrollbar-width: none; }
+        .habit-card {
+            background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px;
+            min-width: 140px; display: flex; flex-direction: column; gap: 8px; cursor: pointer;
+            flex-shrink: 0; user-select: none;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .habit-card:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(0,0,0,0.02); }
+        .habit-icon { font-size: 1.5rem; line-height: 1; }
+        .habit-name { font-weight: 600; font-size: 0.9rem; color: var(--text-main); white-space: nowrap; }
+        .habit-desc { font-size: 0.7rem; color: var(--text-hint); }
+        
+        .habit-modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 3000; display: none; align-items: center; justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .habit-modal {
+            background: var(--bg-panel); width: 90%; max-width: 320px; border-radius: 20px;
+            padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border: 1px solid var(--panel-border);
+            transform: translateY(20px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .habit-modal.active { transform: translateY(0); opacity: 1; }
+        
+        @keyframes floatUpXP {
+            0% { transform: translate(-50%, 0) scale(0.8); opacity: 0; }
+            20% { transform: translate(-50%, -20px) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -80px) scale(1); opacity: 0; }
+        }
+        .float-xp-text {
+            position: fixed; left: 50%; top: 50%; color: var(--primary); font-weight: 900; font-size: 1.8rem;
+            pointer-events: none; z-index: 4000; text-shadow: 0 2px 10px rgba(0,113,227,0.3);
+            animation: floatUpXP 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* ===== Habit Editor Modal ===== */
+        .he-input-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+        .he-input-group label { font-size: 0.75rem; color: var(--text-hint); font-weight: 500; }
+        .he-input-group input, .he-input-group select { 
+            background: var(--bg); border: 1px solid var(--border); color: var(--text-main);
+            padding: 8px 12px; border-radius: 8px; font-size: 0.9rem;
+        }
+        .he-target-row {
+            display: flex; gap: 8px; align-items: center; background: var(--bg);
+            padding: 8px; border-radius: 8px; margin-bottom: 8px;
+        }
+        .he-target-row select, .he-target-row input {
+            background: var(--bg-panel); border: 1px solid var(--border);
+            color: var(--text-main); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem;
+        }
+        .he-btn-icon {
+            background: none; border: none; color: var(--danger, #ff453a); font-size: 1.2rem;
+            cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;
+        }
         .calendar-nav-btn:hover { background: var(--panel-border); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px;}
         .calendar-day-header { text-align: center; font-size: 0.75rem; color: var(--text-hint); padding-bottom: 8px; font-weight: 500;}
@@ -513,29 +573,58 @@
             <div class="calib-step active" id="step-0">
                 <div class="calib-intro">欢迎接入个人成长系统。我们需要进行一次深度的初始问卷，来准确映射你的初始属性(STR/CON/FOC/WIL)。</div>
                 
-                <div class="question-card">
-                    <div class="question-title">基础生理参数</div>
-                    <div class="calib-row">
-                        <div style="flex:1;">
-                            <span class="calib-label">年龄 (AGE)</span>
-                            <input type="number" id="q-age" value="25" min="12" max="100" style="width:100%;">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button id="btn-mode-manual" class="btn-primary" style="flex:1;" onclick="setCalibMode('manual')">传统表单录入</button>
+                    <button id="btn-mode-ai" style="flex:1; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main);" onclick="setCalibMode('ai')">✨ AI 自然语言录入</button>
+                </div>
+
+                <div id="calib-ai-panel" style="display: none; animation: fadeInDown 0.3s forwards;">
+                    <div class="question-card" style="margin-bottom: 15px;">
+                        <div class="question-title">AI 配置 (首次需设置)</div>
+                        <div class="calib-row" style="margin-bottom: 8px;">
+                            <input type="text" id="ai-api-url" placeholder="API URL (例如: https://api.deepseek.com/chat/completions)">
                         </div>
-                        <div style="flex:1;">
-                            <span class="calib-label">性别 (SEX)</span>
-                            <select id="q-sex" style="width:100%;">
-                                <option value="M">男 (M)</option>
-                                <option value="F">女 (F)</option>
-                            </select>
+                        <div class="calib-row" style="margin-bottom: 8px;">
+                            <input type="password" id="ai-api-key" placeholder="API Key">
+                        </div>
+                        <div class="calib-row">
+                            <input type="text" id="ai-model-id" placeholder="Model ID (例如: deepseek-chat)">
                         </div>
                     </div>
-                    <div class="calib-row" style="margin-top: 15px;">
-                        <div style="flex:1;">
-                            <span class="calib-label">身高 (cm) <span style="font-size: 0.7rem; color: var(--text-hint); font-weight: normal;">可选</span></span>
-                            <input type="number" id="q-height" placeholder="例如: 175" style="width:100%;">
+
+                    <div class="question-card">
+                        <div class="question-title">自然语言描述</div>
+                        <div class="question-desc" style="margin-bottom:10px;">请用自然语言描述您的年龄、性别、运动能力（如俯卧撑个数、有氧表现）以及专注力和作息习惯等。AI将自动提取并填入后续表单。</div>
+                        <textarea id="ai-calib-input" style="width: 100%; height: 120px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.95rem; background: var(--bg); resize: vertical;" placeholder="例如：我25岁，男，平常基本不运动，一口气最多做 5 个俯卧撑。注意力很差，经常无目的地刷短视频到半夜..."></textarea>
+                        <button class="btn-primary" id="btn-ai-parse" style="width: 100%; margin-top: 15px; padding: 14px;" onclick="parseCalibAI()">✨ AI 解析并自动填表</button>
+                    </div>
+                </div>
+
+                <div id="calib-manual-panel">
+                    <div class="question-card">
+                        <div class="question-title">基础生理参数</div>
+                        <div class="calib-row">
+                            <div style="flex:1;">
+                                <span class="calib-label">年龄 (AGE)</span>
+                                <input type="number" id="q-age" value="25" min="12" max="100" style="width:100%;">
+                            </div>
+                            <div style="flex:1;">
+                                <span class="calib-label">性别 (SEX)</span>
+                                <select id="q-sex" style="width:100%;">
+                                    <option value="M">男 (M)</option>
+                                    <option value="F">女 (F)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div style="flex:1;">
-                            <span class="calib-label">体重 (kg) <span style="font-size: 0.7rem; color: var(--text-hint); font-weight: normal;">可选</span></span>
-                            <input type="number" id="q-weight" placeholder="例如: 70" style="width:100%;">
+                        <div class="calib-row" style="margin-top: 15px;">
+                            <div style="flex:1;">
+                                <span class="calib-label">身高 (cm) <span style="font-size: 0.7rem; color: var(--text-hint); font-weight: normal;">可选</span></span>
+                                <input type="number" id="q-height" placeholder="例如: 175" style="width:100%;">
+                            </div>
+                            <div style="flex:1;">
+                                <span class="calib-label">体重 (kg) <span style="font-size: 0.7rem; color: var(--text-hint); font-weight: normal;">可选</span></span>
+                                <input type="number" id="q-weight" placeholder="例如: 70" style="width:100%;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -821,7 +910,16 @@
 
     <!-- ===== SECTION 2: ATTRIBUTES ===== -->
     <div class="card" id="card-attributes">
-        <section class="section" id="attributes-container" style="margin-bottom: 0;">
+        <section class="section" style="padding-bottom: 0; border-bottom: 1px solid var(--panel-border);">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>例行习惯 (Routines) <span style="font-size:0.75rem; color:var(--text-hint); font-weight:normal;">[可左右滑动]</span></div>
+                <button style="background:var(--bg); border:1px solid var(--border); color:var(--text-main); font-size:0.75rem; padding:4px 8px; border-radius:6px; cursor:pointer;" onclick="openHabitEditor(null)">+ 新建</button>
+            </div>
+            <div id="habits-container" style="display:flex; gap:12px; overflow-x:auto; padding-bottom:16px;">
+                <!-- JS Generated Habits -->
+            </div>
+        </section>
+        <section class="section" id="attributes-container" style="margin-bottom: 0; padding-top: 16px;">
             <!-- JS Generated -->
         </section>
     </div>
@@ -1085,6 +1183,7 @@ function createFreshDB() {
         current_buff: 1.0,
         last_login_date: new Date().toDateString(),
         action_log: [], // {id, t, type, attrs:[], xp, desc, revoked}
+        habits: [], // {id, name, icon, targets:[{attr, val, intensity}], desc}
         settings: { ...DEFAULT_SETTINGS }
     };
 }
@@ -1218,6 +1317,151 @@ function calibNav(dir) {
     } else {
         document.getElementById('btn-calib-next').style.display = 'block';
         document.getElementById('btn-finish-calib').style.display = 'none';
+    }
+}
+
+function setCalibMode(mode) {
+    const btnManual = document.getElementById('btn-mode-manual');
+    const btnAi = document.getElementById('btn-mode-ai');
+    const pnlManual = document.getElementById('calib-manual-panel');
+    const pnlAi = document.getElementById('calib-ai-panel');
+
+    if (mode === 'manual') {
+        btnManual.className = 'btn-primary';
+        btnManual.style.border = '';
+        btnManual.style.background = '';
+        btnManual.style.color = '';
+        
+        btnAi.className = '';
+        btnAi.style.border = '1px solid var(--border)';
+        btnAi.style.background = 'var(--bg-panel)';
+        btnAi.style.color = 'var(--text-main)';
+        
+        pnlManual.style.display = 'block';
+        pnlAi.style.display = 'none';
+    } else {
+        btnAi.className = 'btn-primary';
+        btnAi.style.border = '';
+        btnAi.style.background = '';
+        btnAi.style.color = '';
+        
+        btnManual.className = '';
+        btnManual.style.border = '1px solid var(--border)';
+        btnManual.style.background = 'var(--bg-panel)';
+        btnManual.style.color = 'var(--text-main)';
+        
+        pnlManual.style.display = 'none';
+        pnlAi.style.display = 'block';
+        
+        document.getElementById('ai-api-url').value = DB.settings.api_url || DEFAULT_SETTINGS.api_url;
+        document.getElementById('ai-api-key').value = DB.settings.api_key || '';
+        document.getElementById('ai-model-id').value = DB.settings.model_id || DEFAULT_SETTINGS.model_id;
+    }
+}
+
+async function parseCalibAI() {
+    const text = document.getElementById('ai-calib-input').value.trim();
+    if (!text) return alert("请先填写自然语言描述。");
+
+    const apiUrl = document.getElementById('ai-api-url').value.trim();
+    const apiKey = document.getElementById('ai-api-key').value.trim();
+    const modelId = document.getElementById('ai-model-id').value.trim();
+
+    if (!apiKey) return alert("请先填写 API Key。");
+
+    DB.settings.api_url = apiUrl;
+    DB.settings.api_key = apiKey;
+    DB.settings.model_id = modelId;
+    saveData();
+
+    const btn = document.getElementById('btn-ai-parse');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'AI 处理中...';
+    btn.disabled = true;
+
+    try {
+        const prompt = `请分析以下用户的自然语言描述，提取初始设定参数，并严格返回 JSON 格式数据。
+用户的描述：
+"${text}"
+
+返回格式要求 (不要包含任何 markdown 块或其它文字)：
+{
+  "age": 25, 
+  "sex": "M"或"F", 
+  "height": 175, 
+  "weight": 70, 
+  "history": 0, (0:极少, 1:经常, 2:专业)
+  "pushups": 0, (0:做不到5个, 1:5-15个, 2:16-30个, 3:30个以上)
+  "pullups": 0, (0:0个, 1:1-5个, 2:6-12个, 3:>12个)
+  "core": 0, (0:<30s, 1:30s-1m, 2:1-2m, 3:>2m)
+  "leg": 0, (0:<10个, 1:10-30个, 2:负重<体重, 3:负重>体重)
+  "rhr": 0, (0:>80, 1:70-80, 2:60-70, 3:<60)
+  "vo2": 0, (0:>18m, 1:15-18m, 2:13-15m, 3:11-13m, 4:<11m)
+  "neat": 0, (0:久坐, 1:适中, 2:高动)
+  "bodyfat": 0, (0:正常, 1:偏胖/瘦, 2:重度偏离)
+  "deep_work": 0, (0:<30m, 1:1h, 2:2h, 3:>3h)
+  "fragment": 0, (0:直接放弃, 1:看手机, 2:屏蔽干扰)
+  "reading": 0, (0:只看短视频, 1:偶尔看书, 2:深度阅读)
+  "social_media": 0 (0:>3h, 1:1-3h, 2:<1h)
+}`;
+        
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: modelId,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.1
+            })
+        });
+
+        if (!response.ok) throw new Error("API 请求失败");
+        const data = await response.json();
+        let content = data.choices[0].message.content;
+        content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const res = JSON.parse(content);
+
+        document.getElementById('q-age').value = res.age || 25;
+        document.getElementById('q-sex').value = res.sex || 'M';
+        if (res.height) document.getElementById('q-height').value = res.height;
+        if (res.weight) document.getElementById('q-weight').value = res.weight;
+        
+        const setOption = (group, val) => {
+            const grid = document.getElementById(group);
+            if (!grid) return;
+            const cards = grid.querySelectorAll('.option-card');
+            cards.forEach(card => card.classList.remove('selected'));
+            const target = grid.querySelector(`[data-val="${val}"]`);
+            if (target) target.classList.add('selected');
+            else if (cards[0]) cards[0].classList.add('selected');
+        };
+        
+        if (res.history !== undefined) setOption('q-str-history', res.history);
+        if (res.pushups !== undefined) setOption('q-str-push', res.pushups);
+        if (res.pullups !== undefined) setOption('q-str-pull', res.pullups);
+        if (res.core !== undefined) setOption('q-str-core', res.core);
+        if (res.leg !== undefined) setOption('q-str-leg', res.leg);
+        if (res.rhr !== undefined) setOption('q-con-rhr', res.rhr);
+        if (res.vo2 !== undefined) setOption('q-con-vo2', res.vo2);
+        if (res.neat !== undefined) setOption('q-con-neat', res.neat);
+        if (res.bodyfat !== undefined) setOption('q-con-fat', res.bodyfat);
+        if (res.deep_work !== undefined) setOption('q-foc-deep', res.deep_work);
+        if (res.fragment !== undefined) setOption('q-foc-frag', res.fragment);
+        if (res.reading !== undefined) setOption('q-foc-read', res.reading);
+        if (res.social_media !== undefined) setOption('q-wil-social', res.social_media);
+
+        updateCalibrationPreview();
+        setCalibMode('manual');
+        alert("AI 解析完成！表单已自动填充，请核对。");
+    } catch (e) {
+        console.error(e);
+        alert("解析失败，请检查 API 配置或网络连通性。");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 
@@ -1470,8 +1714,264 @@ async function initEngine() {
     }
 }
 
+// ===== Habits System =====
+function renderHabits() {
+    const container = document.getElementById('habits-container');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!DB.habits) DB.habits = [];
+    if (DB.habits.length === 0) {
+        container.innerHTML = '';
+    }
+
+    DB.habits.forEach((habit, idx) => {
+        const div = document.createElement('div');
+        div.className = 'habit-card';
+        div.onclick = () => openHabitModal(idx);
+        
+        let tagsHtml = '';
+        if (habit.targets && habit.targets.length) {
+            tagsHtml = '<div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">' + habit.targets.map(t => `<span style="font-size:0.65rem; background:var(--bg); border:1px solid var(--border); padding:2px 6px; border-radius:4px; color:var(--text-dim);">${t.attr} +${t.val}</span>`).join('') + '</div>';
+        }
+
+        div.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="habit-icon">${habit.icon || '📌'}</div>
+                <div class="habit-name">${habit.name}</div>
+            </div>
+            <div class="habit-desc">${habit.desc || ''}</div>
+            ${tagsHtml}
+        `;
+        container.appendChild(div);
+    });
+}
+
+
+function openHabitModal(idx) {
+    const habit = DB.habits[idx];
+    if (!habit) return;
+    
+    document.getElementById('hc-title').innerText = (habit.icon || '📌') + ' ' + habit.name;
+    document.getElementById('hc-desc').innerText = habit.desc || '';
+    
+    const targetsDiv = document.getElementById('hc-targets');
+    targetsDiv.innerHTML = '';
+    
+    habit.targets.forEach(t => {
+        let mult = DB.current_buff || 1.0;
+        let finalXp = t.val * (t.intensity || 1.0) * mult;
+        targetsDiv.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+                <span style="font-weight:600; color:var(--text-main);">${t.attr} <span style="font-size:0.7rem; color:var(--text-hint); font-weight:normal;">(强度 x${t.intensity||1.0})</span></span>
+                <span style="color:var(--primary); font-weight:600; font-variant-numeric:tabular-nums;">+${Math.floor(finalXp)} XP</span>
+            </div>
+        `;
+    });
+    
+    document.getElementById('hc-confirm-btn').onclick = () => executeHabit(idx);
+    document.getElementById('hc-edit-btn').onclick = () => {
+        closeHabitModal();
+        setTimeout(() => openHabitEditor(idx), 300);
+    };
+    
+    const overlay = document.getElementById('habit-confirm-overlay');
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('habit-confirm-modal').classList.add('active');
+    }, 10);
+}
+
+function closeHabitModal() {
+    const modal = document.getElementById('habit-confirm-modal');
+    modal.classList.remove('active');
+    setTimeout(() => {
+        document.getElementById('habit-confirm-overlay').style.display = 'none';
+    }, 300);
+}
+
+function executeHabit(idx) {
+    const habit = DB.habits[idx];
+    if (!habit) return;
+    
+    const actionTime = Date.now();
+    let totalAdded = 0;
+    
+    habit.targets.forEach(t => {
+        const val = t.val;
+        const intensity = t.intensity || 1.0;
+        const attr = t.attr;
+        
+        let attrMult = 1.0;
+        let baseTotalMult = intensity * DB.current_buff; 
+        
+        if (DB.current_debuffs) {
+            if (DB.current_debuffs.includes('SYSTEMIC_INFLAMMATION')) { attrMult *= 0.7; if(intensity>1.0) attrMult*=0.5; }
+            else if (DB.current_debuffs.includes('SLEEP_DEPRIVATION')) { attrMult *= 0.8; if(intensity>1.0) attrMult*=0.7; }
+            else {
+                if (DB.current_debuffs.includes('FLOW_STATE')) attrMult *= 1.15;
+                if (DB.current_debuffs.includes('COGNITIVE_RESERVE') && (attr === 'FOC' || attr === 'WIL')) attrMult *= 1.15;
+            }
+            if (DB.current_debuffs.includes('SYMPATHETIC_OVERDRIVE') && (attr === 'STR' || attr === 'CON')) {
+                if (intensity >= 1.5) attrMult *= 0.7;
+                else if (intensity <= 0.8 && attr === 'CON') attrMult *= 1.1;
+                else attrMult *= 0.85;
+            }
+            if (DB.current_debuffs.includes('BRAIN_FOG') && attr === 'FOC') {
+                if (intensity >= 1.5) attrMult *= 0.8; else attrMult *= 0.95;
+            }
+            if (DB.current_debuffs.includes('MUSCLE_FATIGUE') && attr === 'STR') attrMult *= 0.9;
+        }
+        
+        const attrFinalXp = val * baseTotalMult * attrMult;
+        totalAdded += attrFinalXp;
+        
+        const oldLvl = calcLevelObj(DB.attributes[attr].total_xp).level;
+        DB.attributes[attr].total_xp += attrFinalXp;
+        
+        const medThreshold = oldLvl * 1.5;
+        if (attrFinalXp >= medThreshold) {
+            DB.attributes[attr].last_update = Math.max(DB.attributes[attr].last_update || 0, actionTime);
+        }
+        
+        addActionLog('COMMIT', [attr], attrFinalXp, `习惯打卡: ${habit.name} (${val} x ${intensity})`, actionTime);
+    });
+    
+    logOracle(`> [习惯: ${habit.name}] 打卡成功, 共 +${Math.floor(totalAdded)} XP`);
+    
+    closeHabitModal();
+    
+    const floatEl = document.createElement('div');
+    floatEl.className = 'float-xp-text';
+    floatEl.innerText = `+${Math.floor(totalAdded)} XP`;
+    document.body.appendChild(floatEl);
+    setTimeout(() => { floatEl.remove(); }, 1200);
+    
+    saveData(); 
+    renderRadar(); 
+    renderHeatmap();
+    if (typeof renderStatsDashboard === 'function') renderStatsDashboard();
+}
+
+let currentEditHabitIdx = null;
+
+function openHabitEditor(idx) {
+    currentEditHabitIdx = idx;
+    const title = document.getElementById('he-title');
+    const icon = document.getElementById('he-icon');
+    const name = document.getElementById('he-name');
+    const desc = document.getElementById('he-desc');
+    const container = document.getElementById('he-targets-container');
+    const delBtn = document.getElementById('he-delete-btn');
+    
+    container.innerHTML = '';
+    
+    if (idx === null) {
+        title.innerText = '新建习惯';
+        icon.value = '🏃';
+        name.value = '';
+        desc.value = '';
+        delBtn.style.display = 'none';
+        addHeTargetRow(); // default row
+    } else {
+        title.innerText = '编辑习惯';
+        const habit = DB.habits[idx];
+        icon.value = habit.icon || '';
+        name.value = habit.name || '';
+        desc.value = habit.desc || '';
+        delBtn.style.display = 'block';
+        if (habit.targets && habit.targets.length) {
+            habit.targets.forEach(t => addHeTargetRow(t.attr, t.val, t.intensity));
+        } else {
+            addHeTargetRow();
+        }
+    }
+    
+    document.getElementById('habit-editor-overlay').style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('habit-editor-modal').classList.add('active');
+    }, 10);
+}
+
+function closeHabitEditor() {
+    const modal = document.getElementById('habit-editor-modal');
+    modal.classList.remove('active');
+    setTimeout(() => {
+        document.getElementById('habit-editor-overlay').style.display = 'none';
+    }, 300);
+}
+
+function addHeTargetRow(attr = 'CON', val = 10, intensity = 1.0) {
+    const container = document.getElementById('he-targets-container');
+    const row = document.createElement('div');
+    row.className = 'he-target-row';
+    
+    row.innerHTML = `
+        <select class="he-attr" style="flex: 1.2;">
+            <option value="STR" ${attr==='STR'?'selected':''}>STR (力量)</option>
+            <option value="CON" ${attr==='CON'?'selected':''}>CON (心肺)</option>
+            <option value="FOC" ${attr==='FOC'?'selected':''}>FOC (专注)</option>
+            <option value="WIL" ${attr==='WIL'?'selected':''}>WIL (意志)</option>
+        </select>
+        <input type="number" class="he-val" value="${val}" style="flex: 1;" placeholder="基础值">
+        <select class="he-intensity" style="flex: 1;">
+            <option value="0.5" ${intensity==0.5?'selected':''}>低 (0.5x)</option>
+            <option value="1.0" ${intensity==1.0?'selected':''}>中 (1.0x)</option>
+            <option value="1.5" ${intensity==1.5?'selected':''}>高 (1.5x)</option>
+            <option value="2.0" ${intensity==2.0?'selected':''}>极高 (2.0x)</option>
+        </select>
+        <button class="he-btn-icon" onclick="this.parentElement.remove()">×</button>
+    `;
+    container.appendChild(row);
+}
+
+function saveHabit() {
+    const icon = document.getElementById('he-icon').value.trim() || '📌';
+    const name = document.getElementById('he-name').value.trim();
+    const desc = document.getElementById('he-desc').value.trim();
+    
+    if (!name) return alert('请输入习惯名称');
+    
+    const rows = document.querySelectorAll('.he-target-row');
+    const targets = [];
+    rows.forEach(r => {
+        const attr = r.querySelector('.he-attr').value;
+        const val = parseFloat(r.querySelector('.he-val').value) || 0;
+        const intensity = parseFloat(r.querySelector('.he-intensity').value) || 1.0;
+        if (val > 0) {
+            targets.push({ attr, val, intensity });
+        }
+    });
+    
+    if (targets.length === 0) return alert('请至少添加一个有效的注入目标');
+    
+    const habit = { icon, name, desc, targets };
+    
+    if (currentEditHabitIdx === null) {
+        if (!DB.habits) DB.habits = [];
+        DB.habits.push(habit);
+    } else {
+        DB.habits[currentEditHabitIdx] = habit;
+    }
+    
+    saveData();
+    renderHabits();
+    closeHabitEditor();
+}
+
+function deleteHabit() {
+    if (currentEditHabitIdx === null) return;
+    if (confirm('确定要删除这个习惯吗？此操作不可撤销。')) {
+        DB.habits.splice(currentEditHabitIdx, 1);
+        saveData();
+        renderHabits();
+        closeHabitEditor();
+    }
+}
+
 function bootUI() {
     window.calendarMonthOffset = 0;
+    renderHabits();
     renderHeatmap();
     renderRadar();
     renderVitalsUI();
@@ -1525,6 +2025,7 @@ function loadData() {
     
     if (!DB.settings) DB.settings = { ...DEFAULT_SETTINGS };
     if (!DB.action_log) DB.action_log = [];
+    if (!DB.habits) DB.habits = [];
     if (!DB.vitals_ema) DB.vitals_ema = { sleep_ema: null, hrv_ema: null, rhr_ema: null, count: 0 };
     if (DB.current_hp === undefined) DB.current_hp = 100;
     if (!DB.current_debuffs) DB.current_debuffs = [];
@@ -1688,6 +2189,8 @@ function syncVitals() {
     if (overlay && overlay.classList.contains('active')) toggleRecordOverlay();
 
     saveData(); renderVitalsUI(); renderHeatmap();
+    checkMorningCard();
+    
     if (isToday) {
         logOracle(`> HP: ${DB.current_hp}% | BUFF: x${DB.current_buff.toFixed(1)}`);
     } else {
@@ -2111,48 +2614,49 @@ function renderVitalsUI() {
         hpFill.style.boxShadow = DB.current_hp < 40 ? '0 0 8px rgba(230,81,0,0.4)' : '0 0 8px rgba(0,191,165,0.4)';
     }
 
-    let badges = [];
-    if (DB.current_hp >= 80) badges.push({ text: 'BUFF ×1.2', class: 'status-buff', tip: 'HP ≥ 80: 全局经验获取提升 20%' });
-    else if (DB.current_hp < 40) badges.push({ text: '⚠ 伤病高危', class: 'status-warn', tip: 'HP < 40: 身体机能处于低谷，强烈建议休息' });
+    let activeStates = [];
+    if (DB.current_hp >= 80) activeStates.push({ text: 'BUFF ×1.2', class: 'status-buff', tip: 'HP ≥ 80: 全局经验获取提升 20%' });
+    else if (DB.current_hp < 40) activeStates.push({ text: '⚠ 伤病高危', class: 'status-warn', tip: 'HP < 40: 身体机能处于低谷，强烈建议休息' });
     
     if (DB.current_debuffs) {
         if (DB.current_debuffs.includes('SYSTEMIC_INFLAMMATION')) 
-            badges.push({ text: '▼ 免疫应激', class: 'status-warn', tip: '【基础经验 -30%】睡眠长却伴随生命体征崩溃，身体正处于抗炎、排毒或生病初期。所有正面状态已被强制覆盖。警告：任何高强度训练将受到毁灭性经验惩罚，建议绝对静养！' });
+            activeStates.push({ text: '▼ 免疫应激', class: 'status-warn', tip: '【基础经验 -30%】睡眠长却伴随生命体征崩溃，身体正处于抗炎、排毒或生病初期。所有正面状态已被强制覆盖。警告：任何高强度训练将受到毁灭性经验惩罚，建议绝对静养！' });
         
         if (DB.current_debuffs.includes('SLEEP_DEPRIVATION')) 
-            badges.push({ text: '▼ 睡眠剥夺', class: 'status-warn', tip: '【基础经验 -20%】睡眠时间不足4.8h，皮质醇异常升高，胰岛素敏感性下降。强制屏蔽心流与认知储备。警告：高强度行为收益断崖式下跌，立刻停止透支！' });
+            activeStates.push({ text: '▼ 睡眠剥夺', class: 'status-warn', tip: '【基础经验 -20%】睡眠时间不足4.8h，皮质醇异常升高，胰岛素敏感性下降。强制屏蔽心流与认知储备。警告：高强度行为收益断崖式下跌，立刻停止透支！' });
 
         if (DB.current_debuffs.includes('BRAIN_FOG')) 
-            badges.push({ text: '▼ 脑雾', class: 'status-warn', tip: '【深度脑力惩罚】深睡充分但REM不足。执行机械习惯(WIL)无碍，但试图进行高强度专注(FOC)将导致效率急剧折损。' });
+            activeStates.push({ text: '▼ 脑雾', class: 'status-warn', tip: '【深度脑力惩罚】深睡充分但REM不足。执行机械习惯(WIL)无碍，但试图进行高强度专注(FOC)将导致效率急剧折损。' });
         
         if (DB.current_debuffs.includes('MUSCLE_FATIGUE')) 
-            badges.push({ text: '▼ 肌肉疲劳', class: 'status-warn', tip: '【STR -10%】REM充分但深睡不足，身体未能分泌足够的生长激素进行肌纤维修复。' });
+            activeStates.push({ text: '▼ 肌肉疲劳', class: 'status-warn', tip: '【STR -10%】REM充分但深睡不足，身体未能分泌足够的生长激素进行肌纤维修复。' });
         
         if (DB.current_debuffs.includes('SYMPATHETIC_OVERDRIVE')) 
-            badges.push({ text: '▼ 交感过载', class: 'status-warn', tip: '【高强惩罚 / 恢复奖励】中枢神经系统过度应激。高强度力量训练收益暴跌；但此时进行低强度的有氧散步或冥想(主动恢复)，将获得 +10% 的额外恢复奖励！' });
+            activeStates.push({ text: '▼ 交感过载', class: 'status-warn', tip: '【高强惩罚 / 恢复奖励】中枢神经系统过度应激。高强度力量训练收益暴跌；但此时进行低强度的有氧散步或冥想(主动恢复)，将获得 +10% 的额外恢复奖励！' });
         
         if (DB.current_debuffs.includes('FLOW_STATE')) 
-            badges.push({ text: '▲ 心流状态', class: 'status-buff', tip: '【全属性 +15%】交感与副交感神经系统高度协调，心流门槛极低，神经可塑性处于绝佳状态。' });
+            activeStates.push({ text: '▲ 心流状态', class: 'status-buff', tip: '【全属性 +15%】交感与副交感神经系统高度协调，心流门槛极低，神经可塑性处于绝佳状态。' });
         
         if (DB.current_debuffs.includes('COGNITIVE_RESERVE')) 
-            badges.push({ text: '▲ 认知储备', class: 'status-buff', tip: '【FOC/WIL +15%】深度与REM睡眠双极化充足。前额叶与海马体代谢彻底，意志力槽极深。' });
+            activeStates.push({ text: '▲ 认知储备', class: 'status-buff', tip: '【FOC/WIL +15%】深度与REM睡眠双极化充足。前额叶与海马体代谢彻底，意志力槽极深。' });
     }
     
-    if (badges.length === 0) {
-        badges.push({ text: '✓ 状态平稳', class: 'status-neutral', tip: '一切正常。生命体征平稳，无特殊状态增益或衰减。' });
+    if (activeStates.length === 0) {
+        activeStates.push({ text: '✓ 状态平稳', class: 'status-neutral', tip: '一切正常。生命体征平稳，无特殊状态增益或衰减。' });
     }
     
-    if (badges.length > 0) {
+    if (activeStates.length > 0) {
         statusContainer.style.display = 'flex';
         statusContainer.style.gap = '6px';
         statusContainer.style.alignItems = 'center';
         statusContainer.style.flexWrap = 'wrap';
         statusContainer.className = '';
-        badges.forEach(b => {
+        activeStates.forEach(b => {
             const span = document.createElement('span');
             span.className = `status-badge tip ${b.class}`;
             span.setAttribute('data-tip', b.tip);
             span.innerText = b.text;
+            span.onclick = (e) => e.stopPropagation();
             statusContainer.appendChild(span);
         });
     } else { 
@@ -2395,8 +2899,10 @@ function renderHeatmap() {
         `;
         
         const dateStr = `${month+1}/${day}`;
-        cell.setAttribute('data-tip', `${dateStr} : +${Math.floor(totalXpGain)} / -${Math.floor(totalXpLoss)} XP`);
-        cell.setAttribute('aria-label', `${dateStr} : +${Math.floor(totalXpGain)} / -${Math.floor(totalXpLoss)} XP`);
+        let tipText = `${dateStr} : +${Math.floor(totalXpGain)} / -${Math.floor(totalXpLoss)} XP`;
+        if (dayHp !== null) tipText += ` | HP: ${dayHp}`;
+        cell.setAttribute('data-tip', tipText);
+        cell.setAttribute('aria-label', tipText);
         
         if (dMid > todayMid) {
             cell.classList.add('future');
@@ -2447,6 +2953,7 @@ function renderHeatmapDetail(dMid, logs, dateStr, isToday) {
             let xpStr = entry.xp > 0 ? `+${entry.xp}` : `${entry.xp}`;
             let xpClass = entry.xp < 0 ? 'hist-xp negative' : 'hist-xp';
             if (entry.revoked) { xpStr = '<s>REVOKED</s>'; xpClass = 'hist-xp negative'; }
+            if (entry.type === 'VITALS') { xpStr = `HP: ${entry.hp}`; xpClass = 'hist-xp'; }
 
             let btnHtml = '';
             if (!entry.revoked && entry.type !== 'TOXIC' && entry.type !== 'VITALS' && entry.type !== 'SYSTEM') {
@@ -2487,6 +2994,7 @@ function renderHistory() {
         let xpStr = entry.xp > 0 ? `+${entry.xp}` : `${entry.xp}`;
         let xpClass = entry.xp < 0 ? 'hist-xp negative' : 'hist-xp';
         if (entry.revoked) { xpStr = '<s>REVOKED</s>'; xpClass = 'hist-xp negative'; }
+        if (entry.type === 'VITALS') { xpStr = `HP: ${entry.hp}`; xpClass = 'hist-xp'; }
 
         let btnHtml = '';
         // 允许撤回最近的 10 条（非 TOXIC、VITALS 或 SYSTEM 且未撤销）
@@ -2822,8 +3330,57 @@ function setupEventListeners() {
     
     document.getElementById('btn-sync-vitals').addEventListener('click', syncVitals);
     document.getElementById('btn-oracle-auto').addEventListener('click', callOracleAuto);
+    
+    // Enable horizontal drag-to-scroll and mouse wheel scrolling for habits container
+    const habitsContainer = document.getElementById('habits-container');
+    if (habitsContainer) {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let dragged = false;
 
+        habitsContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            dragged = false;
+            habitsContainer.style.cursor = 'grabbing';
+            startX = e.pageX - habitsContainer.offsetLeft;
+            scrollLeft = habitsContainer.scrollLeft;
+        });
 
+        habitsContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            habitsContainer.style.cursor = '';
+        });
+
+        habitsContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            habitsContainer.style.cursor = '';
+        });
+
+        habitsContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - habitsContainer.offsetLeft;
+            const walk = (x - startX) * 2;
+            if (Math.abs(walk) > 5) dragged = true;
+            habitsContainer.scrollLeft = scrollLeft - walk;
+        });
+
+        habitsContainer.addEventListener('wheel', (evt) => {
+            if (evt.deltaY !== 0) {
+                evt.preventDefault();
+                habitsContainer.scrollLeft += evt.deltaY * 2;
+            }
+        });
+        
+        habitsContainer.addEventListener('click', (e) => {
+            if (dragged) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+    }
+    
     // AI & Settings
     const btnOracleEval = document.getElementById('btn-oracle-eval');
     if (btnOracleEval) btnOracleEval.addEventListener('click', callOracleAuto);
@@ -2933,5 +3490,58 @@ document.addEventListener('DOMContentLoaded', () => {
 // 系统启动
 window.onload = initEngine;
 </script>
+    <!-- Habit Confirm Modal -->
+    <div class="habit-modal-overlay" id="habit-confirm-overlay" onclick="closeHabitModal()">
+        <div class="habit-modal" id="habit-confirm-modal" onclick="if(typeof event !== 'undefined' && event) event.stopPropagation();">
+            <div style="font-size: 1.2rem; font-weight: 600; text-align: center; margin-bottom: 8px; position: relative;">
+                <span id="hc-title">习惯名称</span>
+                <span id="hc-edit-btn" style="position: absolute; right: 0; top: 2px; font-size: 0.85rem; color: var(--primary); cursor: pointer;">编辑</span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-hint); text-align: center; margin-bottom: 20px;" id="hc-desc">描述信息</div>
+            <div style="background: var(--bg); border-radius: 8px; padding: 12px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px;" id="hc-targets">
+                <!-- targets -->
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <button style="flex: 1;" onclick="closeHabitModal()">取消</button>
+                <button class="btn-primary" style="flex: 1;" id="hc-confirm-btn">确认打卡</button>
+            </div>
+        </div>
+    </div>
+    <!-- Habit Editor Modal -->
+    <div class="habit-modal-overlay" id="habit-editor-overlay">
+        <div class="habit-modal" id="habit-editor-modal" style="max-width: 360px; max-height: 85vh; overflow-y: auto;">
+            <div style="font-size: 1.2rem; font-weight: 600; text-align: center; margin-bottom: 16px;" id="he-title">新建习惯</div>
+            
+            <div class="he-input-group">
+                <label>图标 (Icon)</label>
+                <input type="text" id="he-icon" placeholder="例如: 🏃" maxlength="2">
+            </div>
+            
+            <div class="he-input-group">
+                <label>名称 (Name)</label>
+                <input type="text" id="he-name" placeholder="例如: 晨间跑步">
+            </div>
+            
+            <div class="he-input-group">
+                <label>描述 (Description)</label>
+                <input type="text" id="he-desc" placeholder="例如: 30分钟中高强度有氧">
+            </div>
+            
+            <div style="margin-top: 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <label style="font-size: 0.85rem; font-weight: 600;">注入目标 (Targets)</label>
+                <span style="font-size: 0.75rem; color: var(--primary); cursor: pointer;" onclick="addHeTargetRow()">+ 添加目标</span>
+            </div>
+            
+            <div id="he-targets-container" style="min-height: 40px; margin-bottom: 16px;">
+                <!-- targets dynamic list -->
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button style="flex: 1;" onclick="closeHabitEditor()">取消</button>
+                <button class="btn-primary" style="flex: 1;" onclick="saveHabit()">保存</button>
+            </div>
+            <button id="he-delete-btn" style="width: 100%; margin-top: 12px; background: rgba(255, 69, 58, 0.1); color: var(--danger, #ff453a); border-color: transparent; display: none;" onclick="deleteHabit()">删除该习惯</button>
+        </div>
+    </div>
 </body>
 </html>
